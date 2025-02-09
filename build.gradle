@@ -43,7 +43,7 @@ allprojects {
     apply plugin: 'com.netflix.nebula.info'
     apply plugin: 'org.jetbrains.kotlin.jvm'
 
-    group = 'com.netflix.graphql.dgs.codegen'
+    group = 'de.joshuagleitze.graphql.dgs.codegen'
 
     dependencies {
         implementation platform("org.jetbrains.kotlin:kotlin-bom:${Versions.KOTLIN_VERSION}")
