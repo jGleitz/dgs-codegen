@@ -51,18 +51,21 @@ class JSpecifyAnnotator : NullabilityAnnotator {
     }
 
     private fun TypeName.removePreexistingNullabilityAnnotations() =
-        withoutAnnotations().annotated(annotations.filter {
-            it.type != Nullable && it.type != NonNull
-        })
+        withoutAnnotations().annotated(
+            annotations.filter {
+                it.type != Nullable && it.type != NonNull
+            }
+        )
 
     private fun annotation(isNullable: Boolean) = if (isNullable) Nullable else NonNull
 
     override fun annotateType(typeName: TypeName, isNullable: Boolean): TypeName =
         if (typeName.isPrimitive) typeName
-        else
+        else {
             typeName
                 .removePreexistingNullabilityAnnotations()
                 .annotated(AnnotationSpec.builder(annotation(isNullable)).build())
+        }
 
     override fun isNullable(typeName: TypeName) = when {
         typeName.annotations.any { it.type == NonNull } -> false

@@ -268,13 +268,17 @@ class ClientApiGenerator(private val config: CodeGenConfig, private val document
         val clazzName = "${prefix}ProjectionRoot"
         val className = ClassName.get(BaseSubProjectionNode::class.java)
         val parentJavaType = TypeVariableName.get("PARENT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val rootJavaType = TypeVariableName.get("ROOT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val javaType = TypeSpec.classBuilder(clazzName)
             .addOptionalGeneratedAnnotation(config)
             .addTypeVariable(parentJavaType)
@@ -426,13 +430,17 @@ class ClientApiGenerator(private val config: CodeGenConfig, private val document
         val clazzName = "EntitiesProjectionRoot"
         val className = ClassName.get(BaseSubProjectionNode::class.java)
         val parentType = TypeVariableName.get("PARENT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val rootType = TypeVariableName.get("ROOT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val javaType = TypeSpec.classBuilder(clazzName)
             .addOptionalGeneratedAnnotation(config)
             .addTypeVariable(parentType)
@@ -590,13 +598,17 @@ class ClientApiGenerator(private val config: CodeGenConfig, private val document
         if (generatedClasses.contains(clazzName)) return null else generatedClasses.add(clazzName)
 
         val parentJavaType = TypeVariableName.get("PARENT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val rootJavaType = TypeVariableName.get("ROOT")
-            .withBounds(nullability.annotateNonNull(
-                ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-            ))
+            .withBounds(
+                nullability.annotateNonNull(
+                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
+                )
+            )
         val javaType = TypeSpec.classBuilder(clazzName)
             .addOptionalGeneratedAnnotation(config)
             .addTypeVariable(parentJavaType)
