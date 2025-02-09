@@ -17,8 +17,8 @@
 pluginManagement {
     resolutionStrategy {
         eachPlugin {
-            if (requested.id.id == "com.netflix.dgs.codegen") {
-                useModule("com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-gradle:<<<CODEGEN_SNAPSHOT>>>")
+            if (requested.id.id == "de.joshuagleitze.dgs.codegen") {
+                useModule("de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-gradle:<<<CODEGEN_SNAPSHOT>>>")
             }
         }
     }

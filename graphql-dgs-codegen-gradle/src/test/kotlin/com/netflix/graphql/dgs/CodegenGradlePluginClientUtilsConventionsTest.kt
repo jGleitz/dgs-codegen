@@ -38,7 +38,7 @@ class CodegenGradlePluginClientUtilsConventionsTest {
             """
 plugins {
     id 'java'
-    id 'com.netflix.dgs.codegen'
+    id 'de.joshuagleitze.dgs.codegen'
 }
 
 repositories { mavenCentral() }
@@ -69,7 +69,7 @@ codegen.clientCoreConventionsEnabled = false
             """
 plugins {
     id 'java'
-    id 'com.netflix.dgs.codegen'
+    id 'de.joshuagleitze.dgs.codegen'
 }
 
 repositories { mavenCentral() }
@@ -103,7 +103,7 @@ dependencies { }
             """
             plugins {
                 id 'java-library'
-                id 'com.netflix.dgs.codegen'
+                id 'de.joshuagleitze.dgs.codegen'
             }
             
             repositories { mavenCentral() }
@@ -138,7 +138,7 @@ dependencies { }
             """
 plugins {
     id 'java'
-    id 'com.netflix.dgs.codegen'
+    id 'de.joshuagleitze.dgs.codegen'
 }
 
 repositories { mavenCentral() }
@@ -175,7 +175,7 @@ codegen {
             """
 plugins {
     id 'java'
-    id 'com.netflix.dgs.codegen'
+    id 'de.joshuagleitze.dgs.codegen'
 }
 
 repositories { mavenCentral() }

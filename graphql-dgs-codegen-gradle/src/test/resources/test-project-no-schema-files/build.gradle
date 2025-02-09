@@ -18,12 +18,12 @@
 
 plugins {
     id 'java'
-    id 'com.netflix.dgs.codegen'
+    id 'de.joshuagleitze.dgs.codegen'
 }
 
 configurations {
     // injected by Gradle Runner through test configuration, see CodegenGradlePluginTest
-    CodeGenConfiguration.exclude group: "com.netflix.graphql.dgs.codegen", module: "graphql-dgs-codegen-core"
+    CodeGenConfiguration.exclude group: "de.joshuagleitze.graphql.dgs.codegen", module: "graphql-dgs-codegen-core"
 }
 
 generateJava {

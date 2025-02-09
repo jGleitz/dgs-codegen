@@ -77,7 +77,7 @@ class CodegenGradlePluginCompatibilityTest {
             """
                 plugins {
                     id 'java'
-                    id 'com.netflix.dgs.codegen'
+                    id 'de.joshuagleitze.dgs.codegen'
                 }
                 
                  repositories {
