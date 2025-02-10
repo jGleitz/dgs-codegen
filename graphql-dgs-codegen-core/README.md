@@ -1,5 +1,7 @@
-DGS CodeGen
+Fork of DGS CodeGen – with JSpecify support
 ===
+
+> only maintained until JSpecify support is merged upstream.
 
 This module generates Java/Kotlin code from Graphql schemas.
 

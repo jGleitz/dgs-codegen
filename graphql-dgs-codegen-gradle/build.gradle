@@ -35,13 +35,13 @@ description = 'Netflix GraphQL DGS Code Generation Plugin'
 
 pluginBundle {
     vcsUrl = 'https://github.com/jGleitz/dgs-codegen.git'
-    description = 'Gradle plugin for generating Java and Kotlin types from GraphlQL Schema'
+    description = 'Fork of graphql-dgs-codegen-gradle, with support for jspecify. Only maintained until the feature is merged upstream.'
     website = 'https://github.com/jGleitz/dgs-codegen'
     plugins {
         codegen {
             id = 'de.joshuagleitze.dgs.codegen'
             displayName = 'DGS Code Generation Plugin'
-            description = 'Gradle plugin for generating Java and Kotlin classes from GraphQL Schema'
+            description = 'Fork of graphql-dgs-codegen-gradle, with support for jspecify. Only maintained until the feature is merged upstream.'
             tags = ['Codegen']
         }
     }
@@ -54,7 +54,7 @@ gradlePlugin {
         codegen {
             id = 'de.joshuagleitze.dgs.codegen'
             implementationClass = 'com.netflix.graphql.dgs.codegen.gradle.CodegenPlugin'
-            displayName = 'DGS Code Generation Plugin'
+            displayName = 'Fork of the DGS Code Generation Plugin with jspecify support'
         }
     }
 }
