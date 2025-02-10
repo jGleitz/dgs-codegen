@@ -272,6 +272,7 @@ abstract class BaseDataTypeGenerator(
     internal val document: Document
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
+    private val nullability = NullabilityAnnotator.of(config)
 
     internal fun generate(
         name: String,
@@ -314,10 +315,19 @@ abstract class BaseDataTypeGenerator(
             addField(it, javaType)
         }
 
-        addDefaultConstructor(javaType)
+        if (!config.javaNullSafeBuilders) {
+            addDefaultConstructor(javaType)
+        }
 
         if (config.javaGenerateAllConstructor && fields.isNotEmpty()) {
             addParameterizedConstructor(fields, javaType)
+        }
+
+        if (config.javaNullSafeBuilders) {
+            val nonNullFields = fields.filter { !nullability.isNullable(it.type) }
+            if (!config.javaGenerateAllConstructor || nonNullFields != fields) {
+                addParameterizedConstructor(nonNullFields, javaType)
+            }
         }
 
         addToString(fields, javaType)
@@ -424,7 +434,7 @@ abstract class BaseDataTypeGenerator(
     }
 
     private fun addParameterizedConstructor(fieldDefinitions: List<Field>, javaType: TypeSpec.Builder) {
-        val constructorBuilder = MethodSpec.constructorBuilder()
+        val constructorBuilder = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
         for (fieldDefinition in fieldDefinitions) {
             val sanitizedName = ReservedKeywordSanitizer.sanitize(fieldDefinition.name)
             val parameterBuilder = ParameterSpec.builder(fieldDefinition.type, sanitizedName)
@@ -437,7 +447,6 @@ abstract class BaseDataTypeGenerator(
             }
             constructorBuilder
                 .addParameter(parameterBuilder.build())
-                .addModifiers(Modifier.PUBLIC)
                 .addStatement("this.\$N = \$N", sanitizedName, sanitizedName)
         }
         javaType.addMethod(constructorBuilder.build())
@@ -535,11 +544,34 @@ abstract class BaseDataTypeGenerator(
         val buildMethod = MethodSpec.methodBuilder("build")
             .addModifiers(Modifier.PUBLIC)
             .returns(className)
-            .addStatement("\$T result = new \$T()", className, className)
-        for (fieldSpec in builtType.fieldSpecs) {
-            buildMethod.addStatement("result.\$N = this.\$N", fieldSpec.name, fieldSpec.name)
+        val buildCode = CodeBlock.builder()
+        if (config.javaNullSafeBuilders) {
+            buildCode.add("return new \$T(\n", className)
+            buildCode.indent()
+            builtType.fieldSpecs.forEachIndexed { index, fieldSpec ->
+                val sep = if (index < builtType.fieldSpecs.size - 1) "," else ""
+                if (!nullability.isNullable(fieldSpec.type)) {
+                    buildCode.add(
+                        "\$T.\$N(this.\$N, \$S)$sep\n",
+                        ClassName.get(Objects::class.java),
+                        "requireNonNull",
+                        fieldSpec.name,
+                        "No ${fieldSpec.name} was set although it is required!"
+                    )
+                } else {
+                    buildCode.add("this.\$N$sep\n", fieldSpec.name)
+                }
+            }
+            buildCode.unindent()
+            buildCode.addStatement(")")
+        } else {
+            buildCode.addStatement("\$T result = new \$T()", className, className)
+            for (fieldSpec in builtType.fieldSpecs) {
+                buildCode.addStatement("result.\$N = this.\$N", fieldSpec.name, fieldSpec.name)
+            }
+            buildCode.addStatement("return result")
         }
-        buildMethod.addStatement("return result")
+        buildMethod.addCode(buildCode.build())
 
         val builderClassName = className.nestedClass("Builder")
         val newBuilderMethod =
@@ -560,7 +592,13 @@ abstract class BaseDataTypeGenerator(
                 .addMethod(buildMethod.build())
 
         builtType.fieldSpecs.forEach {
-            builderType.addField(it)
+            builderType.addField(
+                FieldSpec.builder(nullability.annotateNullable(it.type), it.name, *it.modifiers.toTypedArray())
+                    .addAnnotations(it.annotations)
+                    .initializer(it.initializer)
+                    .addJavadoc(it.javadoc)
+                    .build()
+            )
             builderType.addMethod(
                 MethodSpec.methodBuilder(it.name)
                     .addJavadoc(it.javadoc)

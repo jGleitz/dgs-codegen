@@ -59,6 +59,8 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
     private val shortProjectionNames by option("--short-projection-names").flag()
     private val generateInterfaceSetters by option("--generate-interface-setters").flag()
     private val generateDocs by option("--generate-docs").flag()
+    private val javaNullabilityAnnotations by option("--java-nullability-annotations", help = "Library to generate nullability annotations in Java code for").choice("jspecify")
+    private val javaNullSafeBuilders by option("--java-null-safe-builders").flag()
 
     override fun run() {
         val inputSchemas = if (schemas.isEmpty()) {
@@ -94,7 +96,9 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
                     generateDataTypes = generateDataTypes,
                     generateInterfaces = generateInterfaces,
                     generateInterfaceSetters = generateInterfaceSetters,
-                    generateDocs = generateDocs
+                    generateDocs = generateDocs,
+                    javaNullabilityAnnotations = javaNullabilityAnnotations,
+                    javaNullSafeBuilders = javaNullSafeBuilders
                 )
             } else {
                 CodeGenConfig(
@@ -115,7 +119,9 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
                     generateDataTypes = generateDataTypes,
                     generateInterfaces = generateInterfaces,
                     generateInterfaceSetters = generateInterfaceSetters,
-                    generateDocs = generateDocs
+                    generateDocs = generateDocs,
+                    javaNullabilityAnnotations = javaNullabilityAnnotations,
+                    javaNullSafeBuilders = javaNullSafeBuilders
                 )
             }
         ).generate()

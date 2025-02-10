@@ -23,6 +23,7 @@ import com.netflix.graphql.dgs.codegen.generators.shared.findSchemaTypeMapping
 import com.netflix.graphql.dgs.codegen.generators.shared.parseMappedType
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeVariableName
 import com.squareup.javapoet.WildcardTypeName
 import graphql.language.*
 import graphql.language.TypeName
@@ -34,6 +35,7 @@ import java.util.*
 import com.squareup.javapoet.TypeName as JavaTypeName
 
 class TypeUtils(private val packageName: String, private val config: CodeGenConfig, private val document: Document) {
+    private val nullability = NullabilityAnnotator.of(config)
 
     companion object {
         private val commonScalars = mapOf<String, JavaTypeName>(
@@ -59,6 +61,15 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
         return "$packageName.$name"
     }
 
+    fun nonNullParameterized(type: String, vararg typeArguments: String): ParameterizedTypeName =
+        nonNullParameterized(type, *typeArguments.map { TypeVariableName.get(it) }.toTypedArray())
+
+    fun nonNullParameterized(type: String, vararg typeArguments: JavaTypeName): ParameterizedTypeName =
+        ParameterizedTypeName.get(
+            ClassName.get("", type),
+            *typeArguments.map { nullability.annotateNonNull(it) }.toTypedArray()
+        )
+
     fun findReturnType(
         fieldType: Type<*>,
         useInterfaceType: Boolean = false,
@@ -68,7 +79,8 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
             override fun visitTypeName(node: TypeName, context: TraverserContext<Node<Node<*>>>): TraversalControl {
                 val typeName = node.toJavaTypeName(useInterfaceType)
                 val boxed = boxType(typeName)
-                context.setAccumulate(boxed)
+                val annotated = nullability.annotateType(boxed, isNullable = true)
+                context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }
 
@@ -93,7 +105,8 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
                 } else {
                     ParameterizedTypeName.get(ClassName.get(List::class.java), boxed)
                 }
-                context.setAccumulate(parameterizedTypeName)
+                val annotated = nullability.annotateType(parameterizedTypeName, isNullable = true)
+                context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }
 
@@ -102,12 +115,13 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
                 context: TraverserContext<Node<Node<*>>>
             ): TraversalControl {
                 val typeName = context.getCurrentAccumulate<JavaTypeName>()
-                val accumulate = if (config.generateBoxedTypes) {
+                val boxed = if (config.generateBoxedTypes) {
                     boxType(typeName)
                 } else {
                     unboxType(typeName)
                 }
-                context.setAccumulate(accumulate)
+                val annotated = nullability.annotateType(boxed, isNullable = false)
+                context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }
 

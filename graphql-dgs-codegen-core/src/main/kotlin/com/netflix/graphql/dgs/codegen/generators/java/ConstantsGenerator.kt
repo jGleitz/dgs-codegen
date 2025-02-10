@@ -34,6 +34,8 @@ import graphql.language.*
 import javax.lang.model.element.Modifier
 
 class ConstantsGenerator(private val config: CodeGenConfig, private val document: Document) {
+    private val nonNullString = NullabilityAnnotator.of(config).annotateNonNull(ClassName.get(String::class.java))
+
     fun generate(): CodeGenResult {
         val javaType = TypeSpec.classBuilder("DgsConstants")
             .addOptionalGeneratedAnnotation(config)
@@ -56,7 +58,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
 
                 if (!types.contains(it.name)) {
                     constantsType.addField(
-                        FieldSpec.builder(ClassName.get(String::class.java), "TYPE_NAME")
+                        FieldSpec.builder(nonNullString, "TYPE_NAME")
                             .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                             .initializer("\$S", it.name).build()
                     )
@@ -80,7 +82,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
                 constantsType.addField(
-                    FieldSpec.builder(ClassName.get(String::class.java), "TYPE_NAME")
+                    FieldSpec.builder(nonNullString, "TYPE_NAME")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                         .initializer("\$S", it.name).build()
                 )
@@ -106,7 +108,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
                 constantsType.addField(
-                    FieldSpec.builder(ClassName.get(String::class.java), "TYPE_NAME")
+                    FieldSpec.builder(nonNullString, "TYPE_NAME")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                         .initializer("\$S", it.name).build()
                 )
@@ -131,7 +133,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
                 constantsType.addField(
-                    FieldSpec.builder(ClassName.get(String::class.java), "TYPE_NAME")
+                    FieldSpec.builder(nonNullString, "TYPE_NAME")
                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                         .initializer("\$S", it.name).build()
                 )
@@ -139,21 +141,21 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
 
         if (document.definitions.any { it is ObjectTypeDefinition && it.name == "Query" }) {
             javaType.addField(
-                FieldSpec.builder(ClassName.get(String::class.java), "QUERY_TYPE")
+                FieldSpec.builder(nonNullString, "QUERY_TYPE")
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                     .initializer(""""Query"""").build()
             )
         }
         if (document.definitions.any { it is ObjectTypeDefinition && it.name == "Mutation" }) {
             javaType.addField(
-                FieldSpec.builder(ClassName.get(String::class.java), "MUTATION_TYPE")
+                FieldSpec.builder(nonNullString, "MUTATION_TYPE")
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                     .initializer(""""Mutation"""").build()
             )
         }
         if (document.definitions.any { it is ObjectTypeDefinition && it.name == "Subscription" }) {
             javaType.addField(
-                FieldSpec.builder(ClassName.get(String::class.java), "SUBSCRIPTION_TYPE")
+                FieldSpec.builder(nonNullString, "SUBSCRIPTION_TYPE")
                     .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                     .initializer(""""Subscription"""").build()
             )
@@ -187,11 +189,9 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
         val sanitizedFieldName = ReservedKeywordSanitizer.sanitize(fieldName.capitalized())
         if (!constantsType.fieldSpecs.any { it.name == sanitizedFieldName }) {
             constantsType.addField(
-                FieldSpec.builder(
-                    ClassName.get(String::class.java),
-                    sanitizedFieldName
-                )
-                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL).initializer("\$S", fieldName).build()
+                FieldSpec.builder(nonNullString, sanitizedFieldName)
+                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL).initializer("\$S", fieldName)
+                    .build()
             )
         }
     }
