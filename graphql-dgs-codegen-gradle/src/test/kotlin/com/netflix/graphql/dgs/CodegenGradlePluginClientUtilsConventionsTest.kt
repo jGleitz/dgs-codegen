@@ -89,9 +89,9 @@ dependencies { }
         val result = runner.build()
         // then we assert that the dependency was resolved to the proper version
         assertThat(result.output)
-            .contains("DGS CodeGen added dependency [com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}")
+            .contains("DGS CodeGen added dependency [de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}")
         assertThat(result.output)
-            .contains("- com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}")
+            .contains("- de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}")
     }
 
     @Test
@@ -126,7 +126,7 @@ dependencies { }
         val result = runner.build()
         // then we assert that the dependency was resolved to the higher version.
         assertThat(result.output)
-            .contains("DGS CodeGen added dependency [com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}] to $configuration.")
+            .contains("DGS CodeGen added dependency [de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()}] to $configuration.")
     }
 
     @Test
@@ -161,9 +161,9 @@ codegen {
         val result = runner.build()
         // then we assert that the dependency was resolved to the higher version.
         assertThat(result.output)
-            .contains("DGS CodeGen added dependency [com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion")
+            .contains("DGS CodeGen added dependency [de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion")
         assertThat(result.output)
-            .contains("- com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion FAILED")
+            .contains("- de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion FAILED")
     }
 
     @Test
@@ -181,7 +181,7 @@ plugins {
 repositories { mavenCentral() }
 
 dependencies { 
-    implementation 'com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion'
+    implementation 'de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:$higherVersion'
 }
             """.trimMargin()
         )
@@ -196,9 +196,9 @@ dependencies {
         val result = runner.build()
         // then we assert that the dependency was resolved to the higher version.
         assertThat(result.output)
-            .contains("DGS CodeGen added dependency [com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core")
+            .contains("DGS CodeGen added dependency [de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core")
         assertThat(result.output)
-            .contains("- com.netflix.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()} -> $higherVersion FAILED")
+            .contains("- de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()} -> $higherVersion FAILED")
     }
 
     private fun prepareBuildGradleFile(content: String) {

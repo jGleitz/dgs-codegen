@@ -28,7 +28,7 @@ import java.util.Properties
 object ClientUtilsConventions {
     const val GRADLE_CLASSPATH_CONFIGURATION = "implementation"
 
-    private const val CLIENT_UTILS_ARTIFACT_GROUP = "com.netflix.graphql.dgs.codegen"
+    private const val CLIENT_UTILS_ARTIFACT_GROUP = "de.joshuagleitze.graphql.dgs.codegen"
     private const val CLIENT_UTILS_ARTIFACT_NAME = "graphql-dgs-codegen-shared-core"
     private const val CLIENT_UTILS_NEBULA_LOCK_ID = "com.netflix.nebula.dependency-lock"
 
