@@ -324,10 +324,12 @@ abstract class BaseDataTypeGenerator(
         if (config.javaNullSafeBuilders) {
             val nonNullFields = fields.filter { !nullability.isNullable(it.type) }
             if (nonNullFields.isNotEmpty()) {
-                javaType.addAnnotation(AnnotationSpec
-                    .builder(JsonDeserialize::class.java)
-                    .addMember("builder", "\$T.class", getBuilderName(ClassName.get("", name)))
-                    .build())
+                javaType.addAnnotation(
+                    AnnotationSpec
+                        .builder(JsonDeserialize::class.java)
+                        .addMember("builder", "\$T.class", getBuilderName(ClassName.get("", name)))
+                        .build()
+                )
             }
             if (!config.javaGenerateAllConstructor || nonNullFields != fields) {
                 addParameterizedConstructor(nonNullFields, javaType)
