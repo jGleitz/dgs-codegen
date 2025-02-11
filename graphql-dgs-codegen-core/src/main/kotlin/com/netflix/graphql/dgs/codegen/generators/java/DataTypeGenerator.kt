@@ -18,17 +18,12 @@
 
 package com.netflix.graphql.dgs.codegen.generators.java
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.netflix.graphql.dgs.codegen.*
 import com.netflix.graphql.dgs.codegen.generators.shared.SiteTarget
 import com.netflix.graphql.dgs.codegen.generators.shared.applyDirectivesJava
-import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.CodeBlock
-import com.squareup.javapoet.FieldSpec
-import com.squareup.javapoet.JavaFile
-import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterSpec
-import com.squareup.javapoet.ParameterizedTypeName
-import com.squareup.javapoet.TypeSpec
+import com.squareup.javapoet.*
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
 import graphql.language.Description
@@ -77,7 +72,10 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
         }.map { it.name }.toList()
 
         var implements = (definition.implements + extensions.flatMap { it.implements })
-            .asSequence().filterIsInstance<TypeName>().map { typeUtils.findReturnType(it).toString() }.toList()
+            .asSequence()
+            .filterIsInstance<TypeName>()
+            .map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
+            .toList()
 
         var useInterfaceType = false
         var overrideGetter = false
@@ -272,7 +270,7 @@ abstract class BaseDataTypeGenerator(
     internal val document: Document
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
-    private val nullability = NullabilityAnnotator.of(config)
+    protected val nullability = NullabilityAnnotator.of(config)
 
     internal fun generate(
         name: String,
@@ -325,6 +323,12 @@ abstract class BaseDataTypeGenerator(
 
         if (config.javaNullSafeBuilders) {
             val nonNullFields = fields.filter { !nullability.isNullable(it.type) }
+            if (nonNullFields.isNotEmpty()) {
+                javaType.addAnnotation(AnnotationSpec
+                    .builder(JsonDeserialize::class.java)
+                    .addMember("builder", "\$T.class", getBuilderName(ClassName.get("", name)))
+                    .build())
+            }
             if (!config.javaGenerateAllConstructor || nonNullFields != fields) {
                 addParameterizedConstructor(nonNullFields, javaType)
             }
@@ -536,6 +540,8 @@ abstract class BaseDataTypeGenerator(
         )
     }
 
+    private fun getBuilderName(className: ClassName) = className.nestedClass("Builder")
+
     private fun addBuilder(javaType: TypeSpec.Builder) {
         val builtType = javaType.build()
         val name = builtType.name
@@ -573,7 +579,7 @@ abstract class BaseDataTypeGenerator(
         }
         buildMethod.addCode(buildCode.build())
 
-        val builderClassName = className.nestedClass("Builder")
+        val builderClassName = getBuilderName(className)
         val newBuilderMethod =
             MethodSpec
                 .methodBuilder("newBuilder")
@@ -609,6 +615,12 @@ abstract class BaseDataTypeGenerator(
                     .addModifiers(Modifier.PUBLIC).build()
             )
         }
+
+        builderType.addAnnotation(
+            AnnotationSpec.builder(JsonPOJOBuilder::class.java)
+                .addMember("withPrefix", "\$S", "")
+                .build()
+        )
 
         javaType.addType(builderType.build())
     }

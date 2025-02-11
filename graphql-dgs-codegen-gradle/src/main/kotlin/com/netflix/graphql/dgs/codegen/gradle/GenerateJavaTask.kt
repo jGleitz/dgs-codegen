@@ -162,7 +162,7 @@ open class GenerateJavaTask @Inject constructor(
 
     @Input
     @Optional
-    var nullabilityAnnotations: String? = null
+    var javaNullabilityAnnotations: String? = null
 
     @Input
     var javaNullSafeBuilders = false
@@ -225,7 +225,7 @@ open class GenerateJavaTask @Inject constructor(
             includeEnumImports = includeEnumImports,
             includeClassImports = includeClassImports,
             generateCustomAnnotations = generateCustomAnnotations,
-            javaNullabilityAnnotations = nullabilityAnnotations,
+            javaNullabilityAnnotations = javaNullabilityAnnotations,
             javaNullSafeBuilders = javaNullSafeBuilders
         )
 

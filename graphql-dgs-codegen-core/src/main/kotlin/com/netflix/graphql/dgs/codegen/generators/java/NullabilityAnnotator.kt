@@ -24,9 +24,9 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 
 interface NullabilityAnnotator {
-    fun annotateNonNull(typeName: TypeName) = annotateType(typeName, isNullable = false)
-    fun annotateNullable(typeName: TypeName) = annotateType(typeName, isNullable = true)
-    fun annotateType(typeName: TypeName, isNullable: Boolean): TypeName
+    fun annotateNonNull(typeName: TypeName): TypeName
+    fun annotateNullable(typeName: TypeName): TypeName
+    fun removeNullabilityAnnotation(typeName: TypeName): TypeName
     fun isNullable(typeName: TypeName): Boolean
 
     companion object {
@@ -39,7 +39,9 @@ interface NullabilityAnnotator {
 }
 
 class NoopAnnotator : NullabilityAnnotator {
-    override fun annotateType(typeName: TypeName, isNullable: Boolean) = typeName
+    override fun annotateNonNull(typeName: TypeName) = typeName
+    override fun annotateNullable(typeName: TypeName) = typeName
+    override fun removeNullabilityAnnotation(typeName: TypeName) = typeName
     override fun isNullable(typeName: TypeName) = true
 }
 
@@ -57,14 +59,17 @@ class JSpecifyAnnotator : NullabilityAnnotator {
             }
         )
 
-    private fun annotation(isNullable: Boolean) = if (isNullable) Nullable else NonNull
+    override fun removeNullabilityAnnotation(typeName: TypeName) = typeName.removePreexistingNullabilityAnnotations()
 
-    override fun annotateType(typeName: TypeName, isNullable: Boolean): TypeName =
-        if (typeName.isPrimitive) typeName
+    override fun annotateNonNull(typeName: TypeName) = typeName.annotateWith(NonNull)
+
+    override fun annotateNullable(typeName: TypeName) = typeName.annotateWith(Nullable)
+
+    private fun TypeName.annotateWith(annotation: ClassName) =
+        if (isPrimitive) this
         else {
-            typeName
-                .removePreexistingNullabilityAnnotations()
-                .annotated(AnnotationSpec.builder(annotation(isNullable)).build())
+            removePreexistingNullabilityAnnotations()
+                .annotated(AnnotationSpec.builder(annotation).build())
         }
 
     override fun isNullable(typeName: TypeName) = when {
