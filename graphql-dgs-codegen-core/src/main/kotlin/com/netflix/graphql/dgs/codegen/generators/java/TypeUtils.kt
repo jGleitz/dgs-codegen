@@ -79,7 +79,7 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
             override fun visitTypeName(node: TypeName, context: TraverserContext<Node<Node<*>>>): TraversalControl {
                 val typeName = node.toJavaTypeName(useInterfaceType)
                 val boxed = boxType(typeName)
-                val annotated = nullability.annotateType(boxed, isNullable = true)
+                val annotated = nullability.annotateNullable(boxed)
                 context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }
@@ -105,7 +105,7 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
                 } else {
                     ParameterizedTypeName.get(ClassName.get(List::class.java), boxed)
                 }
-                val annotated = nullability.annotateType(parameterizedTypeName, isNullable = true)
+                val annotated = nullability.annotateNullable(parameterizedTypeName)
                 context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }
@@ -120,7 +120,7 @@ class TypeUtils(private val packageName: String, private val config: CodeGenConf
                 } else {
                     unboxType(typeName)
                 }
-                val annotated = nullability.annotateType(boxed, isNullable = false)
+                val annotated = nullability.annotateNonNull(boxed)
                 context.setAccumulate(annotated)
                 return TraversalControl.CONTINUE
             }

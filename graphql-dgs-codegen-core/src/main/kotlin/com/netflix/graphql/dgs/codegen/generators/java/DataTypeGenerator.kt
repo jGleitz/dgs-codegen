@@ -77,7 +77,10 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
         }.map { it.name }.toList()
 
         var implements = (definition.implements + extensions.flatMap { it.implements })
-            .asSequence().filterIsInstance<TypeName>().map { typeUtils.findReturnType(it).toString() }.toList()
+            .asSequence()
+            .filterIsInstance<TypeName>()
+            .map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
+            .toList()
 
         var useInterfaceType = false
         var overrideGetter = false
@@ -272,7 +275,7 @@ abstract class BaseDataTypeGenerator(
     internal val document: Document
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
-    private val nullability = NullabilityAnnotator.of(config)
+    protected val nullability = NullabilityAnnotator.of(config)
 
     internal fun generate(
         name: String,
