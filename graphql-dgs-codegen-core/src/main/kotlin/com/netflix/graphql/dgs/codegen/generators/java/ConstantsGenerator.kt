@@ -72,13 +72,12 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
                 types[it.name] = constantsType
             }
 
-        types.values.forEach {
-            javaType.addType(it.build())
-        }
+        types.values.map { it.build() }.sortedBy { it.name }.forEach(javaType::addType)
 
         document.definitions.filterIsInstance<InputObjectTypeDefinition>()
             .asSequence()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
                 constantsType.addField(
@@ -104,6 +103,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
         document.definitions.filterIsInstance<InterfaceTypeDefinition>()
             .asSequence()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
@@ -130,6 +130,7 @@ class ConstantsGenerator(private val config: CodeGenConfig, private val document
         document.definitions.filterIsInstance<UnionTypeDefinition>()
             .asSequence()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
                 constantsType.addField(

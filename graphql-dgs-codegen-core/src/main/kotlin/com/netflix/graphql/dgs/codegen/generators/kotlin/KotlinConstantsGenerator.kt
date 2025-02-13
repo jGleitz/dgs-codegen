@@ -39,6 +39,7 @@ class KotlinConstantsGenerator(private val config: CodeGenConfig, private val do
 
         document.definitions.filterIsInstance<ObjectTypeDefinition>()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
@@ -58,6 +59,7 @@ class KotlinConstantsGenerator(private val config: CodeGenConfig, private val do
 
         document.definitions.filterIsInstance<InputObjectTypeDefinition>()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
@@ -73,6 +75,7 @@ class KotlinConstantsGenerator(private val config: CodeGenConfig, private val do
 
         document.definitions.filterIsInstance<InterfaceTypeDefinition>()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
@@ -90,6 +93,7 @@ class KotlinConstantsGenerator(private val config: CodeGenConfig, private val do
 
         document.definitions.filterIsInstance<UnionTypeDefinition>()
             .excludeSchemaTypeExtension()
+            .sortedBy { it.name }
             .forEach {
                 val constantsType = createConstantTypeBuilder(config, it.name)
 
