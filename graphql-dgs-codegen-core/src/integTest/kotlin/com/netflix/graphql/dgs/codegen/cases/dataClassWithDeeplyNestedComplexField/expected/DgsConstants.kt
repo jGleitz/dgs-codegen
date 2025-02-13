@@ -5,12 +5,6 @@ import kotlin.String
 public object DgsConstants {
   public const val QUERY_TYPE: String = "Query"
 
-  public object QUERY {
-    public const val TYPE_NAME: String = "Query"
-
-    public const val Cars: String = "cars"
-  }
-
   public object CAR {
     public const val TYPE_NAME: String = "Car"
 
@@ -39,5 +33,11 @@ public object DgsConstants {
     public const val ZeroToSixty: String = "zeroToSixty"
 
     public const val QuarterMile: String = "quarterMile"
+  }
+
+  public object QUERY {
+    public const val TYPE_NAME: String = "Query"
+
+    public const val Cars: String = "cars"
   }
 }

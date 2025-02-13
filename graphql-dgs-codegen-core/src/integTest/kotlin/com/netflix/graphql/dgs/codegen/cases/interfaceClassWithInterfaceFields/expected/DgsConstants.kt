@@ -3,8 +3,8 @@ package com.netflix.graphql.dgs.codegen.cases.interfaceClassWithInterfaceFields.
 import kotlin.String
 
 public object DgsConstants {
-  public object DOG {
-    public const val TYPE_NAME: String = "Dog"
+  public object BIRD {
+    public const val TYPE_NAME: String = "Bird"
 
     public const val Id: String = "id"
 
@@ -19,8 +19,8 @@ public object DgsConstants {
     public const val Parents: String = "parents"
   }
 
-  public object BIRD {
-    public const val TYPE_NAME: String = "Bird"
+  public object DOG {
+    public const val TYPE_NAME: String = "Dog"
 
     public const val Id: String = "id"
 

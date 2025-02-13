@@ -1901,10 +1901,10 @@ class KotlinCodeGenTest {
         ).generate()
         val type = result.kotlinConstants[0].members[0] as TypeSpec
         assertThat(type.typeSpecs).extracting("name").containsExactlyElementsOf(constantNames)
-        assertThat(type.typeSpecs[0].propertySpecs).extracting("name").containsExactly("TYPE_NAME", "People")
-        assertThat(type.typeSpecs[1].propertySpecs).extracting("name")
+        assertThat(type.typeSpecs[1].propertySpecs).extracting("name").containsExactly("TYPE_NAME", "Data")
+        assertThat(type.typeSpecs[0].propertySpecs).extracting("name")
             .containsExactly("TYPE_NAME", "Firstname", "Lastname", "Metadata")
-        assertThat(type.typeSpecs[2].propertySpecs).extracting("name").containsExactly("TYPE_NAME", "Data")
+        assertThat(type.typeSpecs[2].propertySpecs).extracting("name").containsExactly("TYPE_NAME", "People")
 
         assertCompilesKotlin(result.kotlinDataTypes + result.kotlinConstants)
     }
@@ -1916,17 +1916,17 @@ class KotlinCodeGenTest {
                 Arguments.of(
                     true,
                     listOf(
-                        "QUERY",
                         "PERSON",
                         "PERSON_META_DATA",
-                        "V_PERSON_META_DATA",
+                        "QUERY",
+                        "URL_META_DATA",
                         "V_1_PERSON_META_DATA",
-                        "URL_META_DATA"
+                        "V_PERSON_META_DATA"
                     )
                 ),
                 Arguments.of(
                     false,
-                    listOf("QUERY", "PERSON", "PERSONMETADATA", "VPERSONMETADATA", "V1PERSONMETADATA", "URLMETADATA")
+                    listOf("PERSON", "PERSONMETADATA", "QUERY", "URLMETADATA", "V1PERSONMETADATA", "VPERSONMETADATA")
                 )
             )
         }
@@ -1957,7 +1957,7 @@ class KotlinCodeGenTest {
             )
         ).generate()
         val type = result.kotlinConstants[0].members[0] as TypeSpec
-        assertThat(type.typeSpecs).extracting("name").containsExactly("QUERY", "PERSON", "PERSONFILTER")
+        assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY", "PERSONFILTER")
         assertThat(type.typeSpecs[2].propertySpecs).extracting("name").containsExactly("TYPE_NAME", "Email")
 
         assertCompilesKotlin(result.kotlinDataTypes + result.kotlinConstants)
@@ -1992,7 +1992,7 @@ class KotlinCodeGenTest {
             )
         ).generate()
         val type = result.kotlinConstants[0].members[0] as TypeSpec
-        assertThat(type.typeSpecs).extracting("name").containsExactly("QUERY", "PERSON", "PERSONFILTER")
+        assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY", "PERSONFILTER")
         assertThat(type.typeSpecs[2].propertySpecs).extracting("name")
             .containsExactly("TYPE_NAME", "Email", "BirthYear")
 
@@ -2024,8 +2024,8 @@ class KotlinCodeGenTest {
             )
         ).generate()
         val type = result.kotlinConstants[0].members[0] as TypeSpec
-        assertThat(type.typeSpecs).extracting("name").containsExactly("QUERY", "PERSON")
-        assertThat(type.typeSpecs[1].propertySpecs).extracting("name")
+        assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY")
+        assertThat(type.typeSpecs[0].propertySpecs).extracting("name")
             .containsExactly("TYPE_NAME", "Firstname", "Lastname", "Email")
 
         assertCompilesKotlin(result.kotlinDataTypes + result.kotlinConstants)
