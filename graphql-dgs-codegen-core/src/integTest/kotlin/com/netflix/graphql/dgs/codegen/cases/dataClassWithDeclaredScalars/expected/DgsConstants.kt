@@ -5,14 +5,6 @@ import kotlin.String
 public object DgsConstants {
   public const val QUERY_TYPE: String = "Query"
 
-  public object QUERY {
-    public const val TYPE_NAME: String = "Query"
-
-    public const val Entity: String = "entity"
-
-    public const val EntityConnection: String = "entityConnection"
-  }
-
   public object ENTITY {
     public const val TYPE_NAME: String = "Entity"
 
@@ -47,5 +39,13 @@ public object DgsConstants {
     public const val HasNextPage: String = "hasNextPage"
 
     public const val HasPreviousPage: String = "hasPreviousPage"
+  }
+
+  public object QUERY {
+    public const val TYPE_NAME: String = "Query"
+
+    public const val Entity: String = "entity"
+
+    public const val EntityConnection: String = "entityConnection"
   }
 }
