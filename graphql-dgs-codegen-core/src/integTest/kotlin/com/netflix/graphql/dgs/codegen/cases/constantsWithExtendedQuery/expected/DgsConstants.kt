@@ -16,8 +16,8 @@ public object DgsConstants {
   public object QUERY {
     public const val TYPE_NAME: String = "Query"
 
-    public const val People: String = "people"
-
     public const val Friends: String = "friends"
+
+    public const val People: String = "people"
   }
 }

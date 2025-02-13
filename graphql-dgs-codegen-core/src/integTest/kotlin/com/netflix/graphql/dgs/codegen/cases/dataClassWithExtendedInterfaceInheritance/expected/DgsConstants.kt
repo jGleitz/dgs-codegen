@@ -8,13 +8,13 @@ public object DgsConstants {
   public object EMPLOYEE {
     public const val TYPE_NAME: String = "Employee"
 
-    public const val Firstname: String = "firstname"
-
-    public const val Lastname: String = "lastname"
+    public const val Age: String = "age"
 
     public const val Company: String = "company"
 
-    public const val Age: String = "age"
+    public const val Firstname: String = "firstname"
+
+    public const val Lastname: String = "lastname"
   }
 
   public object QUERY {
@@ -26,10 +26,10 @@ public object DgsConstants {
   public object PERSON {
     public const val TYPE_NAME: String = "Person"
 
+    public const val Age: String = "age"
+
     public const val Firstname: String = "firstname"
 
     public const val Lastname: String = "lastname"
-
-    public const val Age: String = "age"
   }
 }

@@ -10,9 +10,9 @@ public object DgsConstants {
 
     public const val Firstname: String = "firstname"
 
-    public const val Lastname: String = "lastname"
-
     public const val Friends: String = "friends"
+
+    public const val Lastname: String = "lastname"
   }
 
   public object QUERY {

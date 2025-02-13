@@ -26,8 +26,8 @@ public object DgsConstants {
   public object PERSONFILTER {
     public const val TYPE_NAME: String = "PersonFilter"
 
-    public const val Email: String = "email"
-
     public const val BirthYear: String = "birthYear"
+
+    public const val Email: String = "email"
   }
 }

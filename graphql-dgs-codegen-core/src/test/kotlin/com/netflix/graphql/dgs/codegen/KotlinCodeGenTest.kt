@@ -849,7 +849,7 @@ class KotlinCodeGenTest {
         assertThat(type.typeSpecs).extracting("name").containsExactly("QUERY", "SHOW", "MOVIEFILTER")
         assertThat(type.typeSpecs[0].typeSpecs).extracting("name").containsExactly("SHOWS_INPUT_ARGUMENT")
         assertThat(type.typeSpecs[0].typeSpecs[0].propertySpecs).extracting("name")
-            .containsExactly("TitleFilter", "MoveFilter")
+            .containsExactly("MoveFilter", "TitleFilter")
     }
 
     @Test
@@ -1994,7 +1994,7 @@ class KotlinCodeGenTest {
         val type = result.kotlinConstants[0].members[0] as TypeSpec
         assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY", "PERSONFILTER")
         assertThat(type.typeSpecs[2].propertySpecs).extracting("name")
-            .containsExactly("TYPE_NAME", "Email", "BirthYear")
+            .containsExactly("TYPE_NAME", "BirthYear", "Email")
 
         assertCompilesKotlin(result.kotlinDataTypes + result.kotlinConstants)
     }
@@ -2026,7 +2026,7 @@ class KotlinCodeGenTest {
         val type = result.kotlinConstants[0].members[0] as TypeSpec
         assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY")
         assertThat(type.typeSpecs[0].propertySpecs).extracting("name")
-            .containsExactly("TYPE_NAME", "Firstname", "Lastname", "Email")
+            .containsExactly("TYPE_NAME", "Email", "Firstname", "Lastname")
 
         assertCompilesKotlin(result.kotlinDataTypes + result.kotlinConstants)
     }

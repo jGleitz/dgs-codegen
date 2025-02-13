@@ -8,17 +8,17 @@ public object DgsConstants {
   public object EMPLOYEE {
     public const val TYPE_NAME: String = "Employee"
 
-    public const val Firstname: String = "firstname"
-
     public const val Company: String = "company"
+
+    public const val Firstname: String = "firstname"
   }
 
   public object QUERY {
     public const val TYPE_NAME: String = "Query"
 
-    public const val Person: String = "person"
-
     public const val People: String = "people"
+
+    public const val Person: String = "person"
   }
 
   public object PERSON {

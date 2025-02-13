@@ -2006,7 +2006,7 @@ class CodeGenTest {
         ).generate()
         val type = result.javaConstants[0].typeSpec
         assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY")
-        assertThat(type.typeSpecs[0].fieldSpecs).extracting("name").containsExactly("TYPE_NAME", "Firstname", "Lastname", "Email")
+        assertThat(type.typeSpecs[0].fieldSpecs).extracting("name").containsExactly("TYPE_NAME", "Email", "Firstname", "Lastname")
     }
 
     @Test
@@ -2034,7 +2034,7 @@ class CodeGenTest {
         ).generate()
         val type = result.javaConstants[0].typeSpec
         assertThat(type.typeSpecs).extracting("name").containsExactly("PERSON", "QUERY")
-        assertThat(type.typeSpecs[1].fieldSpecs).extracting("name").containsExactly("TYPE_NAME", "People", "Friends")
+        assertThat(type.typeSpecs[1].fieldSpecs).extracting("name").containsExactly("TYPE_NAME", "Friends", "People")
     }
 
     @Test
@@ -2066,7 +2066,7 @@ class CodeGenTest {
         assertThat(type.typeSpecs).extracting("name").containsExactly("QUERY", "SHOW", "MOVIEFILTER")
         assertThat(type.typeSpecs[0].typeSpecs).extracting("name").containsExactly("SHOWS_INPUT_ARGUMENT")
         assertThat(type.typeSpecs[0].typeSpecs[0].fieldSpecs).extracting("name")
-            .containsExactly("TitleFilter", "MoveFilter")
+            .containsExactly("MoveFilter", "TitleFilter")
     }
 
     @Test

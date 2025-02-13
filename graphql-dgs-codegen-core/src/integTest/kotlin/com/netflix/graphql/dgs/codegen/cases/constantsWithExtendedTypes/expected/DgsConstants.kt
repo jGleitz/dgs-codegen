@@ -8,11 +8,11 @@ public object DgsConstants {
   public object PERSON {
     public const val TYPE_NAME: String = "Person"
 
+    public const val Email: String = "email"
+
     public const val Firstname: String = "firstname"
 
     public const val Lastname: String = "lastname"
-
-    public const val Email: String = "email"
   }
 
   public object QUERY {

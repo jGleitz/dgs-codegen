@@ -6,9 +6,9 @@ public object DgsConstants {
   public object DOG {
     public const val TYPE_NAME: String = "Dog"
 
-    public const val Name: String = "name"
-
     public const val Diet: String = "diet"
+
+    public const val Name: String = "name"
   }
 
   public object VEGETARIAN {
@@ -28,8 +28,8 @@ public object DgsConstants {
   public object PET {
     public const val TYPE_NAME: String = "Pet"
 
-    public const val Name: String = "name"
-
     public const val Diet: String = "diet"
+
+    public const val Name: String = "name"
   }
 }
