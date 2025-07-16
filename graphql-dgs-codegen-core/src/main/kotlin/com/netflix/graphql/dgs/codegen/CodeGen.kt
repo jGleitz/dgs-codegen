@@ -530,8 +530,7 @@ class CodeGenConfig(
     var addGeneratedAnnotation: Boolean = false,
     var disableDatesInGeneratedAnnotation: Boolean = false,
     var addDeprecatedAnnotation: Boolean = false,
-    var javaNullabilityAnnotations: String? = null,
-    var javaNullSafeBuilders: Boolean = false
+    var javaNullabilityAnnotations: String? = null
 ) {
     val packageNameClient: String = "$packageName.$subPackageNameClient"
 
@@ -539,13 +538,6 @@ class CodeGenConfig(
 
     val packageNameTypes: String = "$packageName.$subPackageNameTypes"
     val packageNameDocs: String = "$packageName.$subPackageNameDocs"
-
-    init {
-        // javaNullSafeBuilders requires nullability info, which is only present when we generate it
-        check(!javaNullSafeBuilders || javaNullabilityAnnotations != null) {
-            "${this::javaNullSafeBuilders.name} requires ${this::javaNullabilityAnnotations.name} to be set!"
-        }
-    }
 
     override fun toString(): String {
         return """
@@ -566,6 +558,7 @@ class CodeGenConfig(
             ${typeMapping.map { "--type-mapping ${it.key}=${it.value}" }.joinToString("\n")}           
             ${if (shortProjectionNames) "--short-projection-names" else ""}
             ${if (addGeneratedAnnotation) "--add-generated-annotation" else ""}
+			${if (javaNullabilityAnnotations != null) "--java-nullability-annotations ${javaNullabilityAnnotations}" else ""}
             ${schemas.joinToString(" ")}
         """.trimIndent()
     }

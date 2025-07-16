@@ -164,9 +164,6 @@ open class GenerateJavaTask @Inject constructor(
     @Optional
     var javaNullabilityAnnotations: String? = null
 
-    @Input
-    var javaNullSafeBuilders = false
-
     @Classpath
     val dgsCodegenClasspath: ConfigurableFileCollection = objectFactory.fileCollection().from(
         project.configurations.findByName("dgsCodegen")
@@ -225,8 +222,7 @@ open class GenerateJavaTask @Inject constructor(
             includeEnumImports = includeEnumImports,
             includeClassImports = includeClassImports,
             generateCustomAnnotations = generateCustomAnnotations,
-            javaNullabilityAnnotations = javaNullabilityAnnotations,
-            javaNullSafeBuilders = javaNullSafeBuilders
+            javaNullabilityAnnotations = javaNullabilityAnnotations
         )
 
         logger.info("Codegen config: {}", config)

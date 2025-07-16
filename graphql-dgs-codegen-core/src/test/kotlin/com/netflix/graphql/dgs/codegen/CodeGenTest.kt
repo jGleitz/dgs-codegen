@@ -2521,7 +2521,6 @@ class CodeGenTest {
                 |package com.netflix.graphql.dgs.codegen.tests.generated.types;
                 |
                 |import com.fasterxml.jackson.annotation.JsonTypeInfo;
-                |import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
                 |import java.lang.Object;
                 |import java.lang.Override;
                 |import java.lang.String;
@@ -2606,9 +2605,6 @@ class CodeGenTest {
                 |    return new Builder();
                 |  }
                 |
-                |  @JsonPOJOBuilder(
-                |      withPrefix = ""
-                |  )
                 |  public static class Builder {
                 |    private String firstname;
                 |
