@@ -21,7 +21,6 @@ package com.netflix.graphql.dgs.codegen.generators.kotlin
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.CodeGenResult
 import com.netflix.graphql.dgs.codegen.generators.java.EnumTypeGenerator
-import com.netflix.graphql.dgs.codegen.generators.java.ReservedKeywordSanitizer
 import com.netflix.graphql.dgs.codegen.generators.shared.applyDirectivesKotlin
 import com.netflix.graphql.dgs.codegen.shouldSkip
 import com.squareup.kotlinpoet.FileSpec
@@ -31,19 +30,27 @@ import graphql.language.EnumTypeDefinition
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class KotlinEnumTypeGenerator(private val config: CodeGenConfig) {
+class KotlinEnumTypeGenerator(
+    private val config: CodeGenConfig,
+) {
+    private val kotlinReservedKeywordSanitizer = KotlinReservedKeywordSanitizer()
     private val logger: Logger = LoggerFactory.getLogger(EnumTypeGenerator::class.java)
 
-    fun generate(definition: EnumTypeDefinition, extensions: List<EnumTypeDefinition>): CodeGenResult {
+    fun generate(
+        definition: EnumTypeDefinition,
+        extensions: List<EnumTypeDefinition>,
+    ): CodeGenResult {
         if (definition.shouldSkip(config)) {
             return CodeGenResult.EMPTY
         }
 
         logger.info("Generating enum type ${definition.name}")
 
-        val kotlinType = TypeSpec.classBuilder(definition.name)
-            .addOptionalGeneratedAnnotation(config)
-            .addModifiers(KModifier.ENUM)
+        val kotlinType =
+            TypeSpec
+                .classBuilder(definition.name)
+                .addOptionalGeneratedAnnotation(config)
+                .addModifiers(KModifier.ENUM)
 
         if (definition.description != null) {
             kotlinType.addKdoc("%L", definition.description.sanitizeKdoc())
@@ -56,11 +63,12 @@ class KotlinEnumTypeGenerator(private val config: CodeGenConfig) {
                 typeSpec = TypeSpec.enumBuilder(it.name).addKdoc("%L", it.description.sanitizeKdoc())
             }
             if (it.directives.isNotEmpty()) {
-                typeSpec = typeSpec.addAnnotations(
-                    applyDirectivesKotlin(it.directives, config)
-                )
+                typeSpec =
+                    typeSpec.addAnnotations(
+                        applyDirectivesKotlin(it.directives, config),
+                    )
             }
-            kotlinType.addEnumConstant(ReservedKeywordSanitizer.sanitize(it.name), typeSpec.build())
+            kotlinType.addEnumConstant(kotlinReservedKeywordSanitizer.sanitize(it.name), typeSpec.build())
         }
 
         kotlinType.addType(TypeSpec.companionObjectBuilder().addOptionalGeneratedAnnotation(config).build())
@@ -70,7 +78,5 @@ class KotlinEnumTypeGenerator(private val config: CodeGenConfig) {
         return CodeGenResult(kotlinEnumTypes = listOf(fileSpec))
     }
 
-    private fun getPackageName(): String {
-        return config.packageNameTypes
-    }
+    private fun getPackageName(): String = config.packageNameTypes
 }

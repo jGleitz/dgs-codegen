@@ -29,12 +29,22 @@ abstract class BaseProjectionNode(
      *  ... on Movie {
      * ```
      */
-    val schemaType: Optional<String> = Optional.empty()
+    val schemaType: Optional<String> = Optional.empty(),
 ) {
-
     val fields: MutableMap<String, Any?> = LinkedHashMap()
     val fragments: MutableList<BaseProjectionNode> = LinkedList()
     val inputArguments: MutableMap<String, List<InputArgument>> = LinkedHashMap()
 
-    data class InputArgument(val name: String, val value: Any?)
+    data class InputArgument(
+        val name: String,
+        val value: Any?,
+        val isVariableReference: Boolean = false,
+        val type: graphql.language.Type<*>? = null,
+    ) {
+        constructor(
+            name: String,
+            value: Any?,
+        ) :
+            this(name, value, false, null)
+    }
 }

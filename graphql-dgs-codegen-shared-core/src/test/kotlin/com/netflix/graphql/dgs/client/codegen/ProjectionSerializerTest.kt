@@ -27,15 +27,19 @@ import java.time.ZoneOffset
 import java.util.*
 
 internal class ProjectionSerializerTest {
+    val query = TestGraphQLQuery()
 
     @Test
     fun `Projection with argument that requires a scalar`() {
         val scalars: Map<Class<*>, Coercing<*, *>> =
             mapOf(OffsetDateTime::class.java to ExtendedScalars.DateTime.coercing)
-        val projectionSerializer = ProjectionSerializer(InputValueSerializer(scalars))
+        val projectionSerializer = ProjectionSerializer(InputValueSerializer(scalars), query)
 
-        val projection = ShowsProjectionRoot()
-            .reviews(3, OffsetDateTime.of(2021, 6, 16, 15, 20, 0, 0, ZoneOffset.UTC)).starScore().root
+        val projection =
+            ShowsProjectionRoot()
+                .reviews(3, OffsetDateTime.of(2021, 6, 16, 15, 20, 0, 0, ZoneOffset.UTC))
+                .starScore()
+                .root
         val serialized = projectionSerializer.serialize(projection)
 
         assertThat(serialized).isEqualTo(
@@ -44,7 +48,7 @@ internal class ProjectionSerializerTest {
           |    starScore
           |  }
           |}
-            """.trimMargin()
+            """.trimMargin(),
         )
     }
 
@@ -52,11 +56,16 @@ internal class ProjectionSerializerTest {
     fun `Projection for entity with explicit schema type`() {
         // given
         val root = EntitiesProjectionRoot()
-        root.onMovie(Optional.of("Movie"))
-            .moveId().title().releaseYear()
-            .reviews(username = "Foo", score = 10).username().score()
+        root
+            .onMovie(Optional.of("Movie"))
+            .moveId()
+            .title()
+            .releaseYear()
+            .reviews(username = "Foo", score = 10)
+            .username()
+            .score()
         // when
-        val serialized = ProjectionSerializer(InputValueSerializer()).serialize(root)
+        val serialized = ProjectionSerializer(InputValueSerializer(), query).serialize(root)
         // then
         assertThat(serialized).isEqualTo(
             """{
@@ -71,20 +80,25 @@ internal class ProjectionSerializerTest {
             |    }
             |  }
             |}
-            """.trimMargin()
+            """.trimMargin(),
         )
     }
 
     @Test
     fun `Projection for entity with no explicit schema type`() {
         // given
-        val root = EntitiesProjectionRoot()
-            .onMovie(Optional.empty())
-            .moveId().title().releaseYear()
-            .reviews(username = "Foo", score = 10).username().score()
-            .root()
+        val root =
+            EntitiesProjectionRoot()
+                .onMovie(Optional.empty())
+                .moveId()
+                .title()
+                .releaseYear()
+                .reviews(username = "Foo", score = 10)
+                .username()
+                .score()
+                .root()
         // when
-        val serialized = ProjectionSerializer(InputValueSerializer()).serialize(root)
+        val serialized = ProjectionSerializer(InputValueSerializer(), query).serialize(root)
         // then
         assertThat(serialized).isEqualTo(
             """{
@@ -99,7 +113,7 @@ internal class ProjectionSerializerTest {
             |    }
             |  }
             |}
-            """.trimMargin()
+            """.trimMargin(),
         )
     }
 }
