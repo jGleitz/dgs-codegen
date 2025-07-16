@@ -18,27 +18,14 @@
 
 package com.netflix.graphql.dgs.codegen.generators.java
 
-import javax.lang.model.SourceVersion
+import com.netflix.graphql.dgs.codegen.ReservedKeywordSanitizer
 
-class ReservedKeywordSanitizer {
-
-    companion object {
-        private val reservedKeywords =
-            setOf(
-                "_",
-                "parent",
-                "protected",
-                "root"
-            )
-
-        private const val prefix = "_"
-
-        fun sanitize(originalName: String): String {
-            return if (originalName in reservedKeywords || SourceVersion.isKeyword(originalName)) {
-                "$prefix$originalName"
-            } else {
-                originalName
-            }
-        }
-    }
+class JavaReservedKeywordSanitizer : ReservedKeywordSanitizer() {
+    override val reservedKeywords =
+        setOf(
+            "_",
+            "parent",
+            "protected",
+            "root",
+        )
 }

@@ -20,6 +20,7 @@ package com.netflix.graphql.dgs.codegen.generators.kotlin
 
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.CodeGenResult
+import com.netflix.graphql.dgs.codegen.filterSkipped
 import com.netflix.graphql.dgs.codegen.shouldSkip
 import com.squareup.kotlinpoet.*
 import graphql.language.*
@@ -27,8 +28,10 @@ import graphql.language.TypeName
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private val document: Document) {
-
+class KotlinInterfaceTypeGenerator(
+    private val config: CodeGenConfig,
+    private val document: Document,
+) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(KotlinInterfaceTypeGenerator::class.java)
     }
@@ -38,7 +41,7 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
 
     fun generate(
         definition: InterfaceTypeDefinition,
-        extensions: List<InterfaceTypeExtensionDefinition>
+        extensions: List<InterfaceTypeExtensionDefinition>,
     ): CodeGenResult {
         if (definition.shouldSkip(config)) {
             return CodeGenResult.EMPTY
@@ -46,8 +49,10 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
 
         logger.info("Generating type {}", definition.name)
 
-        val interfaceBuilder = TypeSpec.interfaceBuilder(definition.name)
-            .addOptionalGeneratedAnnotation(config)
+        val interfaceBuilder =
+            TypeSpec
+                .interfaceBuilder(definition.name)
+                .addOptionalGeneratedAnnotation(config)
         if (definition.description != null) {
             interfaceBuilder.addKdoc("%L", definition.description.sanitizeKdoc())
         }
@@ -59,7 +64,7 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
 
         val mergedFieldDefinitions = definition.fieldDefinitions + extensions.flatMap { it.fieldDefinitions }
 
-        mergedFieldDefinitions.forEach { field ->
+        mergedFieldDefinitions.filterSkipped().forEach { field ->
             val returnType = typeUtils.findReturnType(field.type)
             val nullableType = if (typeUtils.isNullable(field.type)) returnType.copy(nullable = true) else returnType
             val propertySpec = PropertySpec.builder(field.name, nullableType)
@@ -68,14 +73,15 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
             }
 
             if (definition.implements.isNotEmpty()) {
-                val superInterfaceFields = document.getDefinitionsOfType(InterfaceTypeDefinition::class.java)
-                    .filter {
-                        superInterfacesNames(definition).contains(it.name)
-                    }
-                    .asSequence()
-                    .flatMap { it.fieldDefinitions }
-                    .map { it.name }
-                    .toSet()
+                val superInterfaceFields =
+                    document
+                        .getDefinitionsOfType(InterfaceTypeDefinition::class.java)
+                        .filter {
+                            superInterfacesNames(definition).contains(it.name)
+                        }.asSequence()
+                        .flatMap { it.fieldDefinitions }
+                        .map { it.name }
+                        .toSet()
 
                 if (field.name in superInterfaceFields) {
                     propertySpec.addModifiers(KModifier.OVERRIDE)
@@ -85,11 +91,14 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
             interfaceBuilder.addProperty(propertySpec.build())
         }
 
-        val implementations = document.getDefinitionsOfType(ObjectTypeDefinition::class.java).asSequence()
-            .filter { node -> node.implements.any { it.isEqualTo(TypeName(definition.name)) } }
-            .map { node -> typeUtils.findKtInterfaceName(node.name, packageName) }
-            .filterIsInstance<ClassName>()
-            .toList()
+        val implementations =
+            document
+                .getDefinitionsOfType(ObjectTypeDefinition::class.java)
+                .asSequence()
+                .filter { node -> node.implements.any { it.isEqualTo(TypeName(definition.name)) } }
+                .map { node -> typeUtils.findKtInterfaceName(node.name, packageName) }
+                .filterIsInstance<ClassName>()
+                .toList()
 
         if (implementations.isNotEmpty()) {
             interfaceBuilder.addAnnotation(jsonTypeInfoAnnotation())
@@ -102,9 +111,8 @@ class KotlinInterfaceTypeGenerator(private val config: CodeGenConfig, private va
         return CodeGenResult(kotlinInterfaces = listOf(fileSpec))
     }
 
-    private fun superInterfacesNames(definition: InterfaceTypeDefinition): List<String> {
-        return definition.implements
+    private fun superInterfacesNames(definition: InterfaceTypeDefinition): List<String> =
+        definition.implements
             .filterIsInstance<TypeName>()
             .map { it.name }
-    }
 }

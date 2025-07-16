@@ -18,10 +18,11 @@
 
 package com.netflix.graphql.dgs.codegen.clientapi
 
+import com.netflix.graphql.dgs.codegen.BASE_PACKAGE_NAME
 import com.netflix.graphql.dgs.codegen.CodeGen
 import com.netflix.graphql.dgs.codegen.CodeGenConfig
 import com.netflix.graphql.dgs.codegen.assertCompilesJava
-import com.netflix.graphql.dgs.codegen.basePackageName
+import com.squareup.javapoet.TypeVariableName
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
@@ -29,7 +30,8 @@ import org.junit.jupiter.api.fail
 class ClientApiGenProjectionTest {
     @Test
     fun generateProjectionRoot() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 people: [Person]
             }
@@ -38,15 +40,16 @@ class ClientApiGenProjectionTest {
                 firstname: String
                 lastname: String
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(1)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("PeopleProjectionRoot")
@@ -56,7 +59,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateProjectionRootTestWithCycles() {
-        val schema = """
+        val schema =
+            """
             type Query @extends {
                 persons: [Person]
             }
@@ -65,15 +69,16 @@ class ClientApiGenProjectionTest {
              name: String
              friends: [Person]
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
         assertThat(codeGenResult.clientProjections.size).isEqualTo(2)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("PersonsProjectionRoot")
         assertThat(codeGenResult.clientProjections[1].typeSpec.name).isEqualTo("PersonProjection")
@@ -86,7 +91,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateInterfaceProjectionsWithCycles() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 search(title: String): [Show]
             }
@@ -105,15 +111,16 @@ class ClientApiGenProjectionTest {
                  show: Show
             }
             
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(4)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("SearchProjectionRoot")
@@ -122,13 +129,15 @@ class ClientApiGenProjectionTest {
         assertThat(codeGenResult.clientProjections[3].typeSpec.name).isEqualTo("ShowProjection")
 
         assertCompilesJava(
-            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes + codeGenResult.javaInterfaces
+            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes +
+                codeGenResult.javaInterfaces,
         )
     }
 
     @Test
     fun generateUnionProjectionsWithCycles() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 search(title: String): [Video]
             }
@@ -149,15 +158,16 @@ class ClientApiGenProjectionTest {
                  video: Video
             }
             
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(5)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("SearchProjectionRoot")
@@ -167,13 +177,15 @@ class ClientApiGenProjectionTest {
         assertThat(codeGenResult.clientProjections[4].typeSpec.name).isEqualTo("VideoProjection")
 
         assertCompilesJava(
-            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes + codeGenResult.javaInterfaces
+            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes +
+                codeGenResult.javaInterfaces,
         )
     }
 
     @Test
     fun generateSubProjectionsWithDifferentRootTypes() {
-        val schema = """
+        val schema =
+            """
             type Query @extends {
                 persons: [Person]
                 friends: [Person]
@@ -182,15 +194,16 @@ class ClientApiGenProjectionTest {
             type Person {
              name: String
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("PersonsProjectionRoot")
         assertThat(codeGenResult.clientProjections[1].typeSpec.name).isEqualTo("FriendsProjectionRoot")
 
@@ -199,7 +212,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionsWithDifferentParentTypes() {
-        val schema = """
+        val schema =
+            """
             type Query @extends {
                 persons: [Person]
                 details(name: String): Details
@@ -213,15 +227,16 @@ class ClientApiGenProjectionTest {
                 name: String
                 age: Integer
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("PersonsProjectionRoot")
         assertThat(codeGenResult.clientProjections[1].typeSpec.name).isEqualTo("DetailsProjection")
         assertThat(codeGenResult.clientProjections[2].typeSpec.name).isEqualTo("DetailsProjectionRoot")
@@ -231,7 +246,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionTypes() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 movies: [Movie]
             }
@@ -246,16 +262,17 @@ class ClientApiGenProjectionTest {
                 name: String
                 age: Integer
             }
-           
-        """.trimIndent()
+            
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(2)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("MoviesProjectionRoot")
@@ -266,7 +283,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionTypesWithSimilarQueryAndFieldNames() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 user: User
             }
@@ -283,15 +301,16 @@ class ClientApiGenProjectionTest {
             type Genre {
                 name: String
             }      
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(3)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("UserProjectionRoot")
@@ -303,7 +322,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionTypesWithShortNames() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 movies: [Movie]
             }
@@ -319,16 +339,17 @@ class ClientApiGenProjectionTest {
                 movies: [Movie]
             }
 
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                shortProjectionNames = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    shortProjectionNames = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(3)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("MoviesProjectionRoot")
@@ -340,29 +361,31 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun testExtendRootProjection() {
-        val schema = """
-          type Query {
-              people: [Person]
-          }
-          
-          type Person {
-            name: String
-          }
-          
-          extend type Person {
-            email: String
-          }
+        val schema =
+            """
+            type Query {
+                people: [Person]
+            }
+            
+            type Person {
+              name: String
+            }
+            
+            extend type Person {
+              email: String
+            }
 
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                typeMapping = mapOf("Long" to "java.lang.Long")
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    typeMapping = mapOf("Long" to "java.lang.Long"),
+                ),
+            ).generate()
         val projections = codeGenResult.clientProjections
         assertThat(projections.size).isEqualTo(1)
         assertThat(projections[0].typeSpec.name).isEqualTo("PeopleProjectionRoot")
@@ -374,32 +397,34 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun testExtendSubProjection() {
-        val schema = """
-          type Query {
-            search: [SearchResult]
-          }
-          
-          type SearchResult {
-            movie: Movie
-          }
-          
-          type Movie {
-            title: String
-          }
-          
-          extend type Movie {
-            director: String
-          }
-        """.trimIndent()
+        val schema =
+            """
+            type Query {
+              search: [SearchResult]
+            }
+            
+            type SearchResult {
+              movie: Movie
+            }
+            
+            type Movie {
+              title: String
+            }
+            
+            extend type Movie {
+              director: String
+            }
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                typeMapping = mapOf("Long" to "java.lang.Long")
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    typeMapping = mapOf("Long" to "java.lang.Long"),
+                ),
+            ).generate()
         val projections = codeGenResult.clientProjections
         assertThat(projections.size).isEqualTo(2)
         assertThat(projections[1].typeSpec.name).isEqualTo("MovieProjection")
@@ -411,32 +436,34 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun testExtendSubProjectionOutOfOrder() {
-        val schema = """
-          type Query {
-            search: [SearchResult]
-          }
+        val schema =
+            """
+            type Query {
+              search: [SearchResult]
+            }
 
-          type SearchResult {
-            movie: Movie
-          }
+            type SearchResult {
+              movie: Movie
+            }
 
-          extend type Movie {
-            director: String
-          }
+            extend type Movie {
+              director: String
+            }
 
-          type Movie {
-            title: String
-          }
-        """.trimIndent()
+            type Movie {
+              title: String
+            }
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                typeMapping = mapOf("Long" to "java.lang.Long")
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    typeMapping = mapOf("Long" to "java.lang.Long"),
+                ),
+            ).generate()
         val projections = codeGenResult.clientProjections
         assertThat(projections.size).isEqualTo(2)
         assertThat(projections[1].typeSpec.name).isEqualTo("MovieProjection")
@@ -448,7 +475,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionTypesMaxDepth() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 movies: [Movie]
             }
@@ -484,15 +512,16 @@ class ClientApiGenProjectionTest {
             }
                 
 
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(6)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("MoviesProjectionRoot")
@@ -507,7 +536,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun testImplementsInterfaceProjection() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 search(title: String): [Show]
             }
@@ -526,15 +556,16 @@ class ClientApiGenProjectionTest {
                 shows: [Show]
             }
             
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.javaQueryTypes.size).isEqualTo(1)
         assertThat(codeGenResult.javaQueryTypes[0].typeSpec.name).isEqualTo("SearchGraphQLQuery")
@@ -547,33 +578,36 @@ class ClientApiGenProjectionTest {
         assertThat(codeGenResult.clientProjections[1].typeSpec.methodSpecs).extracting("name").contains("name")
 
         assertCompilesJava(
-            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes + codeGenResult.javaInterfaces
+            codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaEnumTypes + codeGenResult.javaDataTypes +
+                codeGenResult.javaInterfaces,
         )
     }
 
     @Test
     fun testScalarsDontGenerateProjections() {
-        val schema = """
-          type Query {
-              movieCountry: MovieCountry
-          }
-          
-          type MovieCountry {
-            country: String
-            movieId: Long
-          }
-          scalar Long
+        val schema =
+            """
+            type Query {
+                movieCountry: MovieCountry
+            }
+            
+            type MovieCountry {
+              country: String
+              movieId: Long
+            }
+            scalar Long
 
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                typeMapping = mapOf("Long" to "java.lang.Long")
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    typeMapping = mapOf("Long" to "java.lang.Long"),
+                ),
+            ).generate()
         val projections = codeGenResult.clientProjections
         assertThat(projections.size).isEqualTo(1)
         assertCompilesJava(codeGenResult)
@@ -581,7 +615,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateProjectionRootWithReservedNames() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 weirdType: WeirdType
             }
@@ -593,19 +628,21 @@ class ClientApiGenProjectionTest {
                 import: String
                 short: Integer
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(1)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("WeirdTypeProjectionRoot")
-        assertThat(codeGenResult.clientProjections[0].typeSpec.methodSpecs).extracting("name")
+        assertThat(codeGenResult.clientProjections[0].typeSpec.methodSpecs)
+            .extracting("name")
             .contains("__", "_root", "_parent", "_import", "_short")
 
         assertCompilesJava(codeGenResult)
@@ -613,7 +650,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateSubProjectionWithReservedNames() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 normalType: NormalType
             }
@@ -629,21 +667,24 @@ class ClientApiGenProjectionTest {
                 import: String
                 short: String
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(2)
-        val weirdType = codeGenResult.clientProjections.find { it.typeSpec.name == "WeirdTypeProjection" }
-            ?: fail("NormalType_WeirdTypeProjection type not found")
+        val weirdType =
+            codeGenResult.clientProjections.find { it.typeSpec.name == "WeirdTypeProjection" }
+                ?: fail("NormalType_WeirdTypeProjection type not found")
 
-        assertThat(weirdType.typeSpec.methodSpecs).extracting("name")
+        assertThat(weirdType.typeSpec.methodSpecs)
+            .extracting("name")
             .contains("__", "_root", "_parent", "_import", "_short")
 
         assertCompilesJava(codeGenResult.clientProjections)
@@ -651,7 +692,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun generateProjectionsForSameTypeInSameQueryWithDifferentPaths() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 workshop: Workshop
             }
@@ -672,16 +714,17 @@ class ClientApiGenProjectionTest {
             type Asset {
                 reviews: ReviewConnection          
             }                     
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                writeToFiles = false
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    writeToFiles = false,
+                ),
+            ).generate()
 
         assertThat(codeGenResult.clientProjections.size).isEqualTo(4)
         assertThat(codeGenResult.clientProjections[0].typeSpec.name).isEqualTo("WorkshopProjectionRoot")
@@ -692,7 +735,8 @@ class ClientApiGenProjectionTest {
 
     @Test
     fun `Input arguments on root projections should be support in the query API`() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 movies: [Movie]
             }
@@ -704,27 +748,103 @@ class ClientApiGenProjectionTest {
             type Actor {
                 name: String
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
 
         val methodSpecs = codeGenResult.clientProjections[0].typeSpec.methodSpecs
-        assertThat(methodSpecs.size).isEqualTo(4)
-        val methodWithArgs = methodSpecs.find { it.parameters.size > 0 && it.name == "actors" }
-            ?: fail("Expected method not found")
+        assertThat(methodSpecs.size).isEqualTo(5)
+        val methodWithArgs =
+            methodSpecs.find { it.parameters.size > 0 && it.name == "actors" }
+                ?: fail("Expected method not found")
         assertThat(methodWithArgs.parameters[0].name).isEqualTo("leadCharactersOnly")
         assertThat(methodWithArgs.parameters[0].type.toString()).isEqualTo("java.lang.Boolean")
     }
 
     @Test
+    fun `Input arguments on root projections should have a second method to use variable references`() {
+        val schema =
+            """
+            type Query {
+                movies: [Movie]
+            }
+            
+            type Movie {
+                actors(leadCharactersOnly: Boolean): [Actor]
+            }
+            
+            type Actor {
+                name: String
+            }
+            """.trimIndent()
+
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
+
+        val methodSpecs = codeGenResult.clientProjections[0].typeSpec.methodSpecs
+        val methodWithArgs =
+            methodSpecs.find { it.name == "actorsWithVariableReferences" }
+                ?: fail("Expected method not found")
+        assertThat(methodWithArgs.parameters[0].name).isEqualTo("leadCharactersOnlyReference")
+        assertThat(methodWithArgs.parameters[0].type.toString()).isEqualTo("java.lang.String")
+    }
+
+    @Test
+    fun `Input arguments on root projections should have a second method to use variable references supporting multiple arguments`() {
+        val schema =
+            """
+            type Query {
+                movies: [Movie]
+            }
+            
+            type Movie {
+                actors(leadCharactersOnly: Boolean, filterByName: String): [Actor]
+            }
+            
+            type Actor {
+                name: String
+            }
+            """.trimIndent()
+
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                ),
+            ).generate()
+
+        val methodSpecs = codeGenResult.clientProjections[0].typeSpec.methodSpecs
+        val methodWithArgs =
+            methodSpecs.find { it.name == "actorsWithVariableReferences" }
+                ?: fail("Expected method not found")
+
+        assertThat(methodWithArgs.parameters).hasSize(2)
+        assertThat(methodWithArgs.parameters[0].name).isEqualTo("leadCharactersOnlyReference")
+        assertThat(methodWithArgs.parameters[0].type.toString()).isEqualTo("java.lang.String")
+
+        assertThat(methodWithArgs.parameters[1].name).isEqualTo("filterByNameReference")
+        assertThat(methodWithArgs.parameters[1].type.toString()).isEqualTo("java.lang.String")
+    }
+
+    @Test
     fun `Input arguments on sub projections should be support in the query API`() {
-        val schema = """
+        val schema =
+            """
             type Query {
                 movies: [Movie]
             }
@@ -741,23 +861,69 @@ class ClientApiGenProjectionTest {
             type Award {
                 name: String
             }
-        """.trimIndent()
+            """.trimIndent()
 
-        val codeGenResult = CodeGen(
-            CodeGenConfig(
-                schemas = setOf(schema),
-                packageName = basePackageName,
-                generateClientApiv2 = true,
-                writeToFiles = true
-            )
-        ).generate()
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    writeToFiles = true,
+                ),
+            ).generate()
 
         val methodSpecs = codeGenResult.clientProjections[1].typeSpec.methodSpecs
-        val methodWithArgs = methodSpecs.find { !it.isConstructor && it.parameters.size > 0 }
-            ?: fail("Method not found")
-        assertThat(methodWithArgs.returnType).extracting { it.toString() }
+        val methodWithArgs =
+            methodSpecs.find { !it.isConstructor && it.parameters.size > 0 }
+                ?: fail("Method not found")
+        assertThat(methodWithArgs.returnType)
+            .extracting { it.toString() }
             .isEqualTo("AwardProjection<ActorProjection<PARENT, ROOT>, ROOT>")
         assertThat(methodWithArgs.parameters[0].name).isEqualTo("oscarsOnly")
         assertThat(methodWithArgs.parameters[0].type.toString()).isEqualTo("java.lang.Boolean")
+    }
+
+    @Test
+    fun `Input arguments on sub projections with variable references should be support in the query API`() {
+        val schema =
+            """
+            type Query {
+                movies: [Movie]
+            }
+
+            type Movie {
+                actors: [Actor]
+                awards(oscarsOnly: Boolean): [Award!]
+            }
+
+            type Actor {
+                awards(oscarsOnly: Boolean): [Award!]
+            }
+
+            type Award {
+                name: String
+            }
+            """.trimIndent()
+
+        val codeGenResult =
+            CodeGen(
+                CodeGenConfig(
+                    schemas = setOf(schema),
+                    packageName = BASE_PACKAGE_NAME,
+                    generateClientApiv2 = true,
+                    writeToFiles = true,
+                ),
+            ).generate()
+
+        val methodSpecs = codeGenResult.clientProjections[1].typeSpec.methodSpecs
+        val methodWithArgs =
+            methodSpecs.find { !it.isConstructor && it.parameters.size > 0 && it.name == "awardsWithVariableReferences" }
+                ?: fail("Method not found")
+        assertThat(methodWithArgs.returnType)
+            .extracting { (it as TypeVariableName).name }
+            .isEqualTo("AwardProjection<ActorProjection<PARENT, ROOT>, ROOT>")
+        assertThat(methodWithArgs.parameters[0].name).isEqualTo("oscarsOnlyReference")
+        assertThat(methodWithArgs.parameters[0].type.toString()).isEqualTo("java.lang.String")
     }
 }

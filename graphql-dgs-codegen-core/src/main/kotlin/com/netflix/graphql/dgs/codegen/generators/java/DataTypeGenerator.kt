@@ -18,8 +18,6 @@
 
 package com.netflix.graphql.dgs.codegen.generators.java
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.netflix.graphql.dgs.codegen.*
 import com.netflix.graphql.dgs.codegen.generators.shared.SiteTarget
 import com.netflix.graphql.dgs.codegen.generators.shared.applyDirectivesJava
@@ -42,6 +40,7 @@ import graphql.language.InputObjectTypeDefinition
 import graphql.language.InputObjectTypeExtensionDefinition
 import graphql.language.IntValue
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.NonNullType
 import graphql.language.ObjectTypeDefinition
 import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.ObjectValue
@@ -56,17 +55,25 @@ import java.io.Serializable
 import java.math.BigDecimal
 import java.util.Arrays
 import java.util.Collections
+import java.util.Currency
 import java.util.Locale
 import java.util.Objects
+import java.util.Optional
 import javax.lang.model.element.Modifier
 import com.squareup.javapoet.TypeName as JavaTypeName
 
-class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTypeGenerator(config.packageNameTypes, config, document) {
+class DataTypeGenerator(
+    config: CodeGenConfig,
+    document: Document,
+) : BaseDataTypeGenerator(config.packageNameTypes, config, document) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(DataTypeGenerator::class.java)
     }
 
-    fun generate(definition: ObjectTypeDefinition, extensions: List<ObjectTypeExtensionDefinition>): CodeGenResult {
+    fun generate(
+        definition: ObjectTypeDefinition,
+        extensions: List<ObjectTypeExtensionDefinition>,
+    ): CodeGenResult {
         if (definition.shouldSkip(config)) {
             return CodeGenResult.EMPTY
         }
@@ -74,15 +81,24 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
         logger.info("Generating data type {}", definition.name)
 
         val name = definition.name
-        val unionTypes = document.getDefinitionsOfType(UnionTypeDefinition::class.java).asSequence().filter { union ->
-            union.memberTypes.asSequence().map { it as TypeName }.any { it.name == name }
-        }.map { it.name }.toList()
+        val unionTypes =
+            document
+                .getDefinitionsOfType(UnionTypeDefinition::class.java)
+                .asSequence()
+                .filter { union ->
+                    union.memberTypes
+                        .asSequence()
+                        .map { it as TypeName }
+                        .any { it.name == name }
+                }.map { it.name }
+                .toList()
 
-        var implements = (definition.implements + extensions.flatMap { it.implements })
-            .asSequence()
-            .filterIsInstance<TypeName>()
-            .map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
-            .toList()
+        var implements =
+            (definition.implements + extensions.flatMap { it.implements })
+                .asSequence()
+                .filterIsInstance<TypeName>()
+                .map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
+                .toList()
 
         var useInterfaceType = false
         var overrideGetter = false
@@ -91,28 +107,28 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
         if (config.generateInterfaces) {
             useInterfaceType = true
             val fieldsFromSuperTypes =
-                document.getDefinitionsOfType(InterfaceTypeDefinition::class.java)
+                document
+                    .getDefinitionsOfType(InterfaceTypeDefinition::class.java)
                     .asSequence()
                     .filter { ClassName.get(packageName, it.name).toString() in implements }
                     .flatMap { it.fieldDefinitions }
                     .map { it.name }
 
             overrideGetter = true
-            val fieldDefinitions = definition.fieldDefinitions
-                .asSequence()
-                .filterSkipped()
-                .filter { it.name !in fieldsFromSuperTypes }
-                .map {
-                    Field(it.name, typeUtils.findReturnType(it.type, useInterfaceType, true))
-                }
-                .plus(
-                    extensions
-                        .asSequence()
-                        .flatMap { it.fieldDefinitions }
-                        .filterSkipped()
-                        .map { Field(it.name, typeUtils.findReturnType(it.type, useInterfaceType, true)) }
-                )
-                .toList()
+            val fieldDefinitions =
+                definition.fieldDefinitions
+                    .asSequence()
+                    .filterSkipped()
+                    .filter { it.name !in fieldsFromSuperTypes }
+                    .map {
+                        Field(it.name, typeUtils.findReturnType(it.type, useInterfaceType, true))
+                    }.plus(
+                        extensions
+                            .asSequence()
+                            .flatMap { it.fieldDefinitions }
+                            .filterSkipped()
+                            .map { Field(it.name, typeUtils.findReturnType(it.type, useInterfaceType, true)) },
+                    ).toList()
 
             val interfaceName = "I$name"
             implements = listOf(interfaceName) + implements
@@ -121,30 +137,29 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
         }
 
         if (config.generateDataTypes) {
-            val fieldDefinitions = definition.fieldDefinitions
-                .asSequence()
-                .filterSkipped()
-                .map {
-                    Field(
-                        it.name,
-                        typeUtils.findReturnType(it.type, useInterfaceType, true),
-                        overrideGetter = overrideGetter,
-                        description = it.description,
-                        directives = it.directives
-                    )
-                }
-                .plus(
-                    extensions.asSequence().flatMap { it.fieldDefinitions }.filterSkipped().map {
+            val fieldDefinitions =
+                definition.fieldDefinitions
+                    .asSequence()
+                    .filterSkipped()
+                    .map {
                         Field(
                             it.name,
                             typeUtils.findReturnType(it.type, useInterfaceType, true),
                             overrideGetter = overrideGetter,
                             description = it.description,
-                            directives = it.directives
+                            directives = it.directives,
                         )
-                    }
-                )
-                .toList()
+                    }.plus(
+                        extensions.asSequence().flatMap { it.fieldDefinitions }.filterSkipped().map {
+                            Field(
+                                it.name,
+                                typeUtils.findReturnType(it.type, useInterfaceType, true),
+                                overrideGetter = overrideGetter,
+                                description = it.description,
+                                directives = it.directives,
+                            )
+                        },
+                    ).toList()
 
             return generate(name, unionTypes + implements, fieldDefinitions, definition.description, definition.directives)
                 .merge(interfaceCodeGenResult)
@@ -154,18 +169,21 @@ class DataTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTyp
     }
 }
 
-class InputTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTypeGenerator(config.packageNameTypes, config, document) {
-
+class InputTypeGenerator(
+    config: CodeGenConfig,
+    document: Document,
+) : BaseDataTypeGenerator(config.packageNameTypes, config, document) {
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(InputTypeGenerator::class.java)
-        private val LOCALE: ClassName = ClassName.get(Locale::class.java)
         private val BIG_DECIMAL: ClassName = ClassName.get(BigDecimal::class.java)
+        private val CURRENCY: ClassName = ClassName.get(Currency::class.java)
+        private val LOCALE: ClassName = ClassName.get(Locale::class.java)
     }
 
     fun generate(
         definition: InputObjectTypeDefinition,
         extensions: List<InputObjectTypeExtensionDefinition>,
-        inputTypeDefinitions: List<InputObjectTypeDefinition>
+        inputTypeDefinitions: List<InputObjectTypeDefinition>,
     ): CodeGenResult {
         if (definition.shouldSkip(config)) {
             return CodeGenResult.EMPTY
@@ -174,53 +192,69 @@ class InputTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTy
         logger.info("Generating input type {}", definition.name)
 
         val name = definition.name
-        val fieldDefinitions = definition.inputValueDefinitions.asSequence().map {
-            val type = typeUtils.findReturnType(it.type)
-            val defaultValue = it.defaultValue?.let { defVal ->
-                generateCode(defVal, type, inputTypeDefinitions)
-            }
-            Field(
-                name = it.name,
-                type = type,
-                initialValue = defaultValue,
-                description = it.description,
-                directives = it.directives
-            )
-        }.plus(extensions.asSequence().flatMap { it.inputValueDefinitions }.map { Field(it.name, typeUtils.findReturnType(it.type)) })
-            .toList()
+        val fieldDefinitions =
+            definition.inputValueDefinitions
+                .asSequence()
+                .map {
+                    val type = typeUtils.findReturnType(it.type)
+                    val defaultValue =
+                        it.defaultValue?.let { defVal ->
+                            generateCode(defVal, type, inputTypeDefinitions)
+                        }
+                    Field(
+                        name = it.name,
+                        type = type,
+                        initialValue = defaultValue,
+                        description = it.description,
+                        directives = it.directives,
+                        trackFieldSet = config.trackInputFieldSet && !type.isPrimitive && it.type !is NonNullType,
+                    )
+                }.plus(
+                    extensions.asSequence().flatMap { it.inputValueDefinitions }.map { Field(it.name, typeUtils.findReturnType(it.type)) },
+                ).toList()
         return generate(name, emptyList(), fieldDefinitions, definition.description, definition.directives)
     }
 
     private fun generateCode(
         value: Value<out Value<*>>,
         type: JavaTypeName,
-        inputTypeDefinitions: List<InputObjectTypeDefinition>
-    ): CodeBlock {
-        if (type == LOCALE) {
-            return localeCodeBlock(value, type)
-        } else if (type == BIG_DECIMAL) {
-            return bigDecimalCodeBlock(value, type)
+        inputTypeDefinitions: List<InputObjectTypeDefinition>,
+    ): CodeBlock =
+        when (type) {
+            BIG_DECIMAL -> bigDecimalCodeBlock(value, type)
+            CURRENCY -> currencyCodeBlock(value, type)
+            LOCALE -> localeCodeBlock(value, type)
+            ClassName.LONG.box() -> longCodeBlock(value, type)
+            else -> defaultCodeBlock(value, type, inputTypeDefinitions)
         }
+
+    private fun defaultCodeBlock(
+        value: Value<out Value<*>>,
+        type: JavaTypeName,
+        inputTypeDefinitions: List<InputObjectTypeDefinition>,
+    ): CodeBlock {
         return when (value) {
             is BooleanValue -> CodeBlock.of("\$L", value.isValue)
             is IntValue -> CodeBlock.of("\$L", value.value)
             is StringValue -> CodeBlock.of("\$S", value.value)
             is FloatValue -> CodeBlock.of("\$L", value.value)
             is EnumValue -> CodeBlock.of("\$T.\$N", type, value.name)
-            is ArrayValue -> if (value.values.isEmpty()) {
-                CodeBlock.of("\$T.emptyList()", Collections::class.java)
-            } else {
-                CodeBlock.of(
-                    "\$T.asList(\$L)",
-                    Arrays::class.java,
-                    CodeBlock.join(value.values.map { generateCode(it, type.className, inputTypeDefinitions) }, ", ")
-                )
-            }
-            is ObjectValue -> {
-                val inputObjectDefinition = inputTypeDefinitions.first {
-                    val expectedCanonicalClassName = config.typeMapping[it.name] ?: "${config.packageNameTypes}.${it.name}"
-                    expectedCanonicalClassName == type.className.canonicalName()
+            is ArrayValue ->
+                if (value.values.isEmpty()) {
+                    CodeBlock.of("\$T.emptyList()", Collections::class.java)
+                } else {
+                    CodeBlock.of(
+                        "\$T.asList(\$L)",
+                        Arrays::class.java,
+                        CodeBlock.join(value.values.map { generateCode(it, type.className, inputTypeDefinitions) }, ", "),
+                    )
                 }
+            is ObjectValue -> {
+                val inputObjectDefinition =
+                    inputTypeDefinitions.first {
+                        val expectedCanonicalClassName = config.typeMapping[it.name] ?: "${config.packageNameTypes}.${it.name}"
+                        expectedCanonicalClassName == type.className.canonicalName()
+                    }
                 if (value.objectFields.isEmpty()) {
                     return CodeBlock.of("new \$T()", type)
                 } else {
@@ -229,17 +263,21 @@ class InputTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTy
                         type,
                         CodeBlock.join(
                             value.objectFields.map { objectProperty ->
-                                val argumentType = inputObjectDefinition.inputValueDefinitions.find { it.name == objectProperty.name }
-                                    ?: error("""Property "${objectProperty.name}" does not exist in input type "${inputObjectDefinition.name}"""")
-                                val argumentValue = generateCode(
-                                    objectProperty.value,
-                                    typeUtils.findReturnType(argumentType.type),
-                                    inputTypeDefinitions
-                                )
+                                val argumentType =
+                                    inputObjectDefinition.inputValueDefinitions.find { it.name == objectProperty.name }
+                                        ?: error(
+                                            """Property "${objectProperty.name}" does not exist in input type "${inputObjectDefinition.name}"""",
+                                        )
+                                val argumentValue =
+                                    generateCode(
+                                        objectProperty.value,
+                                        typeUtils.findReturnType(argumentType.type),
+                                        inputTypeDefinitions,
+                                    )
                                 CodeBlock.of("set\$L(\$L);", objectProperty.name.replaceFirstChar { it.uppercaseChar() }, argumentValue)
                             },
-                            ""
-                        )
+                            "",
+                        ),
                     )
                 }
             }
@@ -247,36 +285,69 @@ class InputTypeGenerator(config: CodeGenConfig, document: Document) : BaseDataTy
         }
     }
 
-    private fun localeCodeBlock(value: Value<out Value<*>>, type: JavaTypeName): CodeBlock {
-        check(value is StringValue) { "$type cannot be created from $value, expected String value" }
-        return CodeBlock.of("\$T.forLanguageTag(\$S)", LOCALE, value.value)
-    }
-
-    private fun bigDecimalCodeBlock(value: Value<out Value<*>>, type: JavaTypeName): CodeBlock {
-        return when (value) {
+    private fun bigDecimalCodeBlock(
+        value: Value<out Value<*>>,
+        type: JavaTypeName,
+    ): CodeBlock =
+        when (value) {
             is StringValue -> CodeBlock.of("new \$T(\$S)", BIG_DECIMAL, value.value)
             is IntValue -> CodeBlock.of("new \$T(\$L)", BIG_DECIMAL, value.value)
             is FloatValue -> CodeBlock.of("new \$T(\$L)", BIG_DECIMAL, value.value)
             else -> error("$type cannot be created from $value, expected String, Int or Float value")
         }
+
+    private fun currencyCodeBlock(
+        value: Value<out Value<*>>,
+        type: JavaTypeName,
+    ): CodeBlock =
+        when (value) {
+            is StringValue -> CodeBlock.of("\$T.getInstance(\$S)", CURRENCY, value.value)
+            else -> error("$type cannot be created from $value, expected String value")
+        }
+
+    private fun localeCodeBlock(
+        value: Value<out Value<*>>,
+        type: JavaTypeName,
+    ): CodeBlock {
+        check(value is StringValue) { "$type cannot be created from $value, expected String value" }
+        return CodeBlock.of("\$T.forLanguageTag(\$S)", LOCALE, value.value)
+    }
+
+    private fun longCodeBlock(
+        value: Value<out Value<*>>,
+        type: JavaTypeName,
+    ): CodeBlock {
+        check(value is IntValue) { "$type cannot be created from $value, expected Int value" }
+        return CodeBlock.of("\$LL", value.value)
     }
 
     private val JavaTypeName.className: ClassName
-        get() = when (this) {
-            is ClassName -> this
-            is ParameterizedTypeName -> typeArguments.first().className
-            else -> throw UnsupportedOperationException("Unknown type: ${this.javaClass}")
-        }
+        get() =
+            when (this) {
+                is ClassName -> this
+                is ParameterizedTypeName -> typeArguments.first().className
+                else -> throw UnsupportedOperationException("Unknown type: ${this.javaClass}")
+            }
 }
 
-internal data class Field(val name: String, val type: JavaTypeName, val initialValue: CodeBlock? = null, val overrideGetter: Boolean = false, val interfaceType: com.squareup.javapoet.TypeName? = null, val description: Description? = null, val directives: List<Directive> = listOf())
+internal data class Field(
+    val name: String,
+    val type: JavaTypeName,
+    val initialValue: CodeBlock? = null,
+    val overrideGetter: Boolean = false,
+    val interfaceType: com.squareup.javapoet.TypeName? = null,
+    val description: Description? = null,
+    val directives: List<Directive> = listOf(),
+    val trackFieldSet: Boolean = false,
+)
 
 abstract class BaseDataTypeGenerator(
     internal val packageName: String,
     internal val config: CodeGenConfig,
-    internal val document: Document
+    internal val document: Document,
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
+    private val javaReservedKeywordSanitizer = JavaReservedKeywordSanitizer()
     protected val nullability = NullabilityAnnotator.of(config)
 
     internal fun generate(
@@ -284,11 +355,13 @@ abstract class BaseDataTypeGenerator(
         interfaces: List<String>,
         fields: List<Field>,
         description: Description? = null,
-        directives: List<Directive> = emptyList()
+        directives: List<Directive> = emptyList(),
     ): CodeGenResult {
-        val javaType = TypeSpec.classBuilder(name)
-            .addOptionalGeneratedAnnotation(config)
-            .addModifiers(Modifier.PUBLIC)
+        val javaType =
+            TypeSpec
+                .classBuilder(name)
+                .addOptionalGeneratedAnnotation(config)
+                .addModifiers(Modifier.PUBLIC)
 
         if (config.implementSerializable) {
             javaType.addSuperinterface(Serializable::class.java)
@@ -322,7 +395,7 @@ abstract class BaseDataTypeGenerator(
 
         addDefaultConstructor(javaType)
 
-        if (config.javaGenerateAllConstructor && fields.isNotEmpty()) {
+        if (config.javaGenerateAllConstructor && fields.isNotEmpty() && fields.size < 256) {
             addParameterizedConstructor(fields, javaType)
         }
 
@@ -337,10 +410,16 @@ abstract class BaseDataTypeGenerator(
         return CodeGenResult(javaDataTypes = listOf(javaFile))
     }
 
-    internal fun generateInterface(name: String, superInterfaces: List<Type<*>>, fields: List<Field>): CodeGenResult {
-        val javaType = TypeSpec.interfaceBuilder(name)
-            .addOptionalGeneratedAnnotation(config)
-            .addModifiers(Modifier.PUBLIC)
+    internal fun generateInterface(
+        name: String,
+        superInterfaces: List<Type<*>>,
+        fields: List<Field>,
+    ): CodeGenResult {
+        val javaType =
+            TypeSpec
+                .interfaceBuilder(name)
+                .addOptionalGeneratedAnnotation(config)
+                .addModifiers(Modifier.PUBLIC)
 
         superInterfaces.forEach {
             javaType.addSuperinterface(typeUtils.findJavaInterfaceName((it as TypeName).name, packageName))
@@ -360,15 +439,17 @@ abstract class BaseDataTypeGenerator(
         if (builtType.fieldSpecs.isEmpty()) {
             return
         }
-        val methodBuilder = MethodSpec.methodBuilder("hashCode")
-            .addAnnotation(Override::class.java)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(JavaTypeName.INT)
+        val methodBuilder =
+            MethodSpec
+                .methodBuilder("hashCode")
+                .addAnnotation(Override::class.java)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(JavaTypeName.INT)
 
         methodBuilder.addStatement(
             "return \$T.hash(\$L)",
             Objects::class.java,
-            builtType.fieldSpecs.joinToString(", ") { it.name }
+            builtType.fieldSpecs.joinToString(", ") { it.name },
         )
         javaType.addMethod(methodBuilder.build())
     }
@@ -379,11 +460,13 @@ abstract class BaseDataTypeGenerator(
             return
         }
 
-        val methodBuilder = MethodSpec.methodBuilder("equals")
-            .addAnnotation(Override::class.java)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(JavaTypeName.BOOLEAN)
-            .addParameter(JavaTypeName.OBJECT, "o")
+        val methodBuilder =
+            MethodSpec
+                .methodBuilder("equals")
+                .addAnnotation(Override::class.java)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(JavaTypeName.BOOLEAN)
+                .addParameter(JavaTypeName.OBJECT, "o")
 
         methodBuilder.addStatement("if (this == o) return true")
         methodBuilder.addStatement("if (o == null || getClass() != o.getClass()) return false")
@@ -398,26 +481,33 @@ abstract class BaseDataTypeGenerator(
                         CodeBlock.of("\$T.equals(\$L, that.\$L)", Objects::class.java, field.name, field.name)
                     }
                 },
-                " &&\n"
-            )
+                " &&\n",
+            ),
         )
         javaType.addMethod(methodBuilder.build())
     }
 
-    private fun addToString(fieldDefinitions: List<Field>, javaType: TypeSpec.Builder) {
+    private fun addToString(
+        fieldDefinitions: List<Field>,
+        javaType: TypeSpec.Builder,
+    ) {
         val builtType = javaType.build()
-        val methodBuilder = MethodSpec.methodBuilder("toString")
-            .addAnnotation(Override::class.java)
-            .addModifiers(Modifier.PUBLIC)
-            .returns(String::class.java)
+        val methodBuilder =
+            MethodSpec
+                .methodBuilder("toString")
+                .addAnnotation(Override::class.java)
+                .addModifiers(Modifier.PUBLIC)
+                .returns(String::class.java)
 
-        val toStringBody = CodeBlock.builder()
-            .add("return \"\$L{", builtType.name)
+        val toStringBody =
+            CodeBlock
+                .builder()
+                .add("return \"\$L{", builtType.name)
         for ((idx, fieldDef) in fieldDefinitions.withIndex()) {
             if (fieldDef.directives.any { it.name == "sensitive" }) {
                 toStringBody.add("\$L='*****'", fieldDef.name)
             } else {
-                toStringBody.add("\$L='\" + \$L + \"'", fieldDef.name, ReservedKeywordSanitizer.sanitize(fieldDef.name))
+                toStringBody.add("\$L='\" + \$L + \"'", fieldDef.name, javaReservedKeywordSanitizer.sanitize(fieldDef.name))
             }
             if (idx != fieldDefinitions.lastIndex) {
                 toStringBody.add(", ")
@@ -429,10 +519,13 @@ abstract class BaseDataTypeGenerator(
         javaType.addMethod(methodBuilder.build())
     }
 
-    private fun addParameterizedConstructor(fieldDefinitions: List<Field>, javaType: TypeSpec.Builder) {
+    private fun addParameterizedConstructor(
+        fieldDefinitions: List<Field>,
+        javaType: TypeSpec.Builder,
+    ) {
         val constructorBuilder = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
         for (fieldDefinition in fieldDefinitions) {
-            val sanitizedName = ReservedKeywordSanitizer.sanitize(fieldDefinition.name)
+            val sanitizedName = javaReservedKeywordSanitizer.sanitize(fieldDefinition.name)
             val parameterBuilder = ParameterSpec.builder(fieldDefinition.type, sanitizedName)
             if (fieldDefinition.directives.isNotEmpty()) {
                 val (annotations, _) = applyDirectivesJava(fieldDefinition.directives, config)
@@ -443,7 +536,12 @@ abstract class BaseDataTypeGenerator(
             }
             constructorBuilder
                 .addParameter(parameterBuilder.build())
-                .addStatement("this.\$N = \$N", sanitizedName, sanitizedName)
+                .addModifiers(Modifier.PUBLIC)
+            if (fieldDefinition.trackFieldSet) {
+                constructorBuilder.addStatement("this.\$N = Optional.ofNullable(\$N)", sanitizedName, sanitizedName)
+            } else {
+                constructorBuilder.addStatement("this.\$N = \$N", sanitizedName, sanitizedName)
+            }
         }
         javaType.addMethod(constructorBuilder.build())
     }
@@ -452,35 +550,77 @@ abstract class BaseDataTypeGenerator(
         javaType.addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC).build())
     }
 
-    private fun addInterface(type: String, javaType: TypeSpec.Builder) {
+    private fun addInterface(
+        type: String,
+        javaType: TypeSpec.Builder,
+    ) {
         val interfaceTypeMappedName: String? = config.typeMapping[type]
-        val interfaceName: ClassName = if (interfaceTypeMappedName == null) ClassName.get(packageName, type) else ClassName.bestGuess(interfaceTypeMappedName)
+        val interfaceName: ClassName =
+            if (interfaceTypeMappedName ==
+                null
+            ) {
+                ClassName.get(packageName, type)
+            } else {
+                ClassName.bestGuess(interfaceTypeMappedName)
+            }
 
         javaType.addSuperinterface(interfaceName)
     }
 
-    private fun addField(fieldDefinition: Field, javaType: TypeSpec.Builder) {
+    private fun addField(
+        fieldDefinition: Field,
+        javaType: TypeSpec.Builder,
+    ) {
         addFieldWithGetterAndSetter(fieldDefinition.type, fieldDefinition, javaType)
     }
 
-    private fun addFieldWithGetterAndSetter(returnType: JavaTypeName, fieldDefinition: Field, javaType: TypeSpec.Builder) {
-        val fieldBuilder = if (fieldDefinition.initialValue != null) {
+    private fun addFieldWithGetterAndSetter(
+        returnType: JavaTypeName,
+        fieldDefinition: Field,
+        javaType: TypeSpec.Builder,
+    ) {
+        var fieldType = fieldDefinition.type
+        if (fieldDefinition.trackFieldSet) {
+            fieldType = ParameterizedTypeName.get(ClassName.get(Optional::class.java), fieldType)
+        }
+
+        val fieldBuilder =
             FieldSpec
-                .builder(fieldDefinition.type, ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
+                .builder(fieldType, javaReservedKeywordSanitizer.sanitize(fieldDefinition.name))
                 .addModifiers(Modifier.PRIVATE)
-                .initializer(fieldDefinition.initialValue)
-        } else {
-            FieldSpec.builder(returnType, ReservedKeywordSanitizer.sanitize(fieldDefinition.name)).addModifiers(Modifier.PRIVATE)
+        if (fieldDefinition.initialValue != null) {
+            if (fieldDefinition.trackFieldSet) {
+                fieldBuilder.initializer("Optional.of(\$L)", fieldDefinition.initialValue)
+            } else {
+                fieldBuilder.initializer(fieldDefinition.initialValue)
+            }
         }
 
         if (fieldDefinition.description != null) {
             fieldBuilder.addJavadoc("\$L", fieldDefinition.description.content)
         }
 
-        val getterPrefix = if (returnType == com.squareup.javapoet.TypeName.BOOLEAN && config.generateIsGetterForPrimitiveBooleanFields) "is" else "get"
-        val getterName = typeUtils.transformIfDefaultClassMethodExists("${getterPrefix}${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}", TypeUtils.getClass)
+        val getterPrefix =
+            if (returnType == com.squareup.javapoet.TypeName.BOOLEAN &&
+                config.generateIsGetterForPrimitiveBooleanFields
+            ) {
+                "is"
+            } else {
+                "get"
+            }
+        val getterName =
+            typeUtils.transformIfDefaultClassMethodExists(
+                "${getterPrefix}${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}",
+                TypeUtils.GET_CLASS,
+            )
 
-        val getterMethodBuilder = MethodSpec.methodBuilder(getterName).addModifiers(Modifier.PUBLIC).returns(returnType).addStatement("return \$N", ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
+        val getterMethodBuilder = MethodSpec.methodBuilder(getterName).addModifiers(Modifier.PUBLIC).returns(returnType)
+        val sanitizedName = javaReservedKeywordSanitizer.sanitize(fieldDefinition.name)
+        if (fieldDefinition.trackFieldSet) {
+            getterMethodBuilder.addStatement("return \$N == null ? null : \$N.orElse(null)", sanitizedName, sanitizedName)
+        } else {
+            getterMethodBuilder.addStatement("return \$N", sanitizedName)
+        }
         if (fieldDefinition.overrideGetter) {
             getterMethodBuilder.addAnnotation(Override::class.java)
         }
@@ -489,15 +629,29 @@ abstract class BaseDataTypeGenerator(
             getterMethodBuilder.addJavadoc("\$L", fieldDefinition.description.content)
         }
 
-        val setterName = typeUtils.transformIfDefaultClassMethodExists("set${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}", TypeUtils.setClass)
-        val parameterBuilder = ParameterSpec.builder(returnType, ReservedKeywordSanitizer.sanitize(fieldDefinition.name))
-        val setterMethodBuilder = MethodSpec.methodBuilder(setterName)
-            .addModifiers(Modifier.PUBLIC)
-            .addStatement(
-                "this.\$N = \$N",
-                ReservedKeywordSanitizer.sanitize(fieldDefinition.name),
-                ReservedKeywordSanitizer.sanitize(fieldDefinition.name)
+        val setterName =
+            typeUtils.transformIfDefaultClassMethodExists(
+                "set${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}",
+                TypeUtils.SET_CLASS,
             )
+        val parameterBuilder = ParameterSpec.builder(returnType, javaReservedKeywordSanitizer.sanitize(fieldDefinition.name))
+        val setterMethodBuilder =
+            MethodSpec
+                .methodBuilder(setterName)
+                .addModifiers(Modifier.PUBLIC)
+        if (fieldDefinition.trackFieldSet) {
+            setterMethodBuilder.addStatement(
+                "this.\$N = Optional.ofNullable(\$N)",
+                sanitizedName,
+                sanitizedName,
+            )
+        } else {
+            setterMethodBuilder.addStatement(
+                "this.\$N = \$N",
+                sanitizedName,
+                sanitizedName,
+            )
+        }
 
         if (fieldDefinition.directives.isNotEmpty()) {
             val (annotations, comments) = applyDirectivesJava(fieldDefinition.directives, config)
@@ -520,15 +674,38 @@ abstract class BaseDataTypeGenerator(
         javaType.addField(fieldBuilder.build())
         javaType.addMethod(getterMethodBuilder.build())
         javaType.addMethod(setterMethodBuilder.build())
+        if (fieldDefinition.trackFieldSet) {
+            val hasFieldMethodName =
+                typeUtils.transformIfDefaultClassMethodExists(
+                    "has${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}",
+                    TypeUtils.SET_CLASS,
+                )
+            val hasFieldMethodBuilder =
+                MethodSpec
+                    .methodBuilder(hasFieldMethodName)
+                    .returns(JavaTypeName.BOOLEAN)
+                    .addModifiers(Modifier.PUBLIC)
+                    .addStatement(
+                        "return \$N != null",
+                        sanitizedName,
+                    )
+            javaType.addMethod(hasFieldMethodBuilder.build())
+        }
     }
 
-    private fun addAbstractGetter(returnType: JavaTypeName, fieldDefinition: Field, javaType: TypeSpec.Builder) {
+    private fun addAbstractGetter(
+        returnType: JavaTypeName,
+        fieldDefinition: Field,
+        javaType: TypeSpec.Builder,
+    ) {
         val getterPrefix = if (returnType == JavaTypeName.BOOLEAN && config.generateIsGetterForPrimitiveBooleanFields) "is" else "get"
         val getterName = "${getterPrefix}${fieldDefinition.name[0].uppercase()}${fieldDefinition.name.substring(1)}"
         javaType.addMethod(
-            MethodSpec.methodBuilder(getterName)
+            MethodSpec
+                .methodBuilder(getterName)
                 .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .returns(returnType).build()
+                .returns(returnType)
+                .build(),
         )
     }
 
@@ -537,10 +714,12 @@ abstract class BaseDataTypeGenerator(
         val name = builtType.name
         val className = ClassName.get(packageName, name)
 
-        val buildMethod = MethodSpec.methodBuilder("build")
-            .addModifiers(Modifier.PUBLIC)
-            .returns(className)
-            .addStatement("\$T result = new \$T()", className, className)
+        val buildMethod =
+            MethodSpec
+                .methodBuilder("build")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(className)
+                .addStatement("\$T result = new \$T()", className, className)
         for (fieldSpec in builtType.fieldSpecs) {
             buildMethod.addStatement("result.\$N = this.\$N", fieldSpec.name, fieldSpec.name)
         }
@@ -565,22 +744,36 @@ abstract class BaseDataTypeGenerator(
                 .addMethod(buildMethod.build())
 
         builtType.fieldSpecs.forEach {
+            var originalType = it.type
+            var isOptional = false
+            if (originalType is ParameterizedTypeName && originalType.rawType == ClassName.get(Optional::class.java)) {
+                originalType = originalType.typeArguments.first()
+                isOptional = true
+            }
             builderType.addField(
-                FieldSpec.builder(nullability.annotateNullable(it.type), it.name, *it.modifiers.toTypedArray())
+                FieldSpec
+                    .builder(nullability.annotateNullable(it.type), it.name, *it.modifiers.toTypedArray())
                     .addAnnotations(it.annotations)
                     .initializer(it.initializer)
                     .addJavadoc(it.javadoc)
-                    .build()
+                    .build(),
             )
-            builderType.addMethod(
-                MethodSpec.methodBuilder(it.name)
+            val methodBuilder =
+                MethodSpec
+                    .methodBuilder(it.name)
                     .addJavadoc(it.javadoc)
-                    .returns(builderClassName)
-                    .addStatement("this.\$N = \$N", it.name, it.name)
-                    .addStatement("return this")
-                    .addParameter(ParameterSpec.builder(it.type, it.name).build())
-                    .addModifiers(Modifier.PUBLIC).build()
-            )
+                    .returns(nullability.annotateNonNull(builderClassName))
+            if (isOptional) {
+                methodBuilder.addStatement("this.\$N = Optional.ofNullable(\$N)", it.name, it.name)
+            } else {
+                methodBuilder.addStatement("this.\$N = \$N", it.name, it.name)
+            }
+            methodBuilder
+                .addStatement("return this")
+                .addParameter(ParameterSpec.builder(originalType, it.name).build())
+                .addModifiers(Modifier.PUBLIC)
+
+            builderType.addMethod(methodBuilder.build())
         }
 
         javaType.addType(builderType.build())

@@ -30,12 +30,19 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.lang.model.element.Modifier
 
-class EnumTypeGenerator(private val config: CodeGenConfig) {
+class EnumTypeGenerator(
+    private val config: CodeGenConfig,
+) {
+    private val javaReservedKeywordSanitizer = JavaReservedKeywordSanitizer()
+
     companion object {
         private val logger: Logger = LoggerFactory.getLogger(EnumTypeGenerator::class.java)
     }
 
-    fun generate(definition: EnumTypeDefinition, extensions: List<EnumTypeDefinition>): CodeGenResult {
+    fun generate(
+        definition: EnumTypeDefinition,
+        extensions: List<EnumTypeDefinition>,
+    ): CodeGenResult {
         if (definition.shouldSkip(config)) {
             return CodeGenResult.EMPTY
         }
@@ -56,6 +63,9 @@ class EnumTypeGenerator(private val config: CodeGenConfig) {
 
         mergedEnumDefinitions.forEach {
             val typeSpec = TypeSpec.anonymousClassBuilder("")
+            if (it.description != null && it.description.content.isNotBlank()) {
+                typeSpec.addJavadoc("\$L", it.description.content)
+            }
             if (it.directives.isNotEmpty()) {
                 val (annotations, comments) = applyDirectivesJava(it.directives, config)
                 if (!comments.isNullOrBlank()) {
@@ -68,7 +78,7 @@ class EnumTypeGenerator(private val config: CodeGenConfig) {
                     }
                 }
             }
-            javaType.addEnumConstant(ReservedKeywordSanitizer.sanitize(it.name), typeSpec.build())
+            javaType.addEnumConstant(javaReservedKeywordSanitizer.sanitize(it.name), typeSpec.build())
         }
 
         val javaFile = JavaFile.builder(getPackageName(), javaType.build()).build()
@@ -76,7 +86,5 @@ class EnumTypeGenerator(private val config: CodeGenConfig) {
         return CodeGenResult(javaEnumTypes = listOf(javaFile))
     }
 
-    private fun getPackageName(): String {
-        return config.packageNameTypes
-    }
+    private fun getPackageName(): String = config.packageNameTypes
 }

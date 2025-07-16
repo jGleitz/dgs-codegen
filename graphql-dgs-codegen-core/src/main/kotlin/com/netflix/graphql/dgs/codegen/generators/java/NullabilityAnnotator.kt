@@ -25,23 +25,30 @@ import com.squareup.javapoet.TypeName
 
 interface NullabilityAnnotator {
     fun annotateNonNull(typeName: TypeName): TypeName
+
     fun annotateNullable(typeName: TypeName): TypeName
+
     fun removeNullabilityAnnotation(typeName: TypeName): TypeName
+
     fun isNullable(typeName: TypeName): Boolean
 
     companion object {
-        fun of(config: CodeGenConfig) = when (config.javaNullabilityAnnotations) {
-            null -> NoopAnnotator()
-            "jspecify" -> JSpecifyAnnotator()
-            else -> throw IllegalArgumentException("Unknown nullability library: " + config.javaNullabilityAnnotations)
-        }
+        fun of(config: CodeGenConfig) =
+            when (config.javaNullabilityAnnotations) {
+                null -> NoopAnnotator()
+                "jspecify" -> JSpecifyAnnotator()
+                else -> throw IllegalArgumentException("Unknown nullability library: " + config.javaNullabilityAnnotations)
+            }
     }
 }
 
 class NoopAnnotator : NullabilityAnnotator {
     override fun annotateNonNull(typeName: TypeName) = typeName
+
     override fun annotateNullable(typeName: TypeName) = typeName
+
     override fun removeNullabilityAnnotation(typeName: TypeName) = typeName
+
     override fun isNullable(typeName: TypeName) = true
 }
 
@@ -56,7 +63,7 @@ class JSpecifyAnnotator : NullabilityAnnotator {
         withoutAnnotations().annotated(
             annotations.filter {
                 it.type != Nullable && it.type != NonNull
-            }
+            },
         )
 
     override fun removeNullabilityAnnotation(typeName: TypeName) = typeName.removePreexistingNullabilityAnnotations()
@@ -66,15 +73,17 @@ class JSpecifyAnnotator : NullabilityAnnotator {
     override fun annotateNullable(typeName: TypeName) = typeName.annotateWith(Nullable)
 
     private fun TypeName.annotateWith(annotation: ClassName) =
-        if (isPrimitive) this
-        else {
+        if (isPrimitive) {
+            this
+        } else {
             removePreexistingNullabilityAnnotations()
                 .annotated(AnnotationSpec.builder(annotation).build())
         }
 
-    override fun isNullable(typeName: TypeName) = when {
-        typeName.annotations.any { it.type == NonNull } -> false
-        typeName.annotations.any { it.type == Nullable } -> true
-        else -> throw IllegalStateException("Type $typeName is missing a nullability annotation")
-    }
+    override fun isNullable(typeName: TypeName) =
+        when {
+            typeName.annotations.any { it.type == NonNull } -> false
+            typeName.annotations.any { it.type == Nullable } -> true
+            else -> throw IllegalStateException("Type $typeName is missing a nullability annotation")
+        }
 }

@@ -20,9 +20,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
  */
 
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version "1.9.25" apply false
-    id 'com.netflix.nebula.netflixoss' version '11.4.0'
-    id "org.jmailen.kotlinter" version "3.11.1"
+    id 'org.jetbrains.kotlin.jvm' version "2.0.21" apply false
+    id 'com.netflix.nebula.netflixoss' version '11.6.0'
+    id "org.jmailen.kotlinter" version "5.0.1"
 }
 
 description = 'Netflix GraphQL DGS Code Generation'
@@ -31,7 +31,7 @@ allprojects {
 
     ext {
         Versions = [
-                KOTLIN_VERSION: '1.9.25'
+                KOTLIN_VERSION: '2.0.21'
         ]
     }
 
@@ -46,13 +46,21 @@ allprojects {
     group = 'com.netflix.graphql.dgs.codegen'
 
     dependencies {
-        implementation platform("org.jetbrains.kotlin:kotlin-bom:${Versions.KOTLIN_VERSION}")
-        testImplementation "org.jetbrains.kotlin:kotlin-compiler"
+        // Gradle Platforms applied to all modudles
+        api platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:10.0.4")
 
+        implementation platform("org.jetbrains.kotlin:kotlin-bom:${Versions.KOTLIN_VERSION}")
+        implementation platform("com.fasterxml.jackson:jackson-bom:2.18.3")
+
+        // Test dependencies
         testImplementation platform('org.junit:junit-bom:5.10.+')
-        testImplementation 'org.assertj:assertj-core:3.26.+'
+        testImplementation 'org.jetbrains.kotlin:kotlin-compiler'
+        testImplementation 'org.assertj:assertj-core:3.27.+'
         testImplementation 'org.junit.jupiter:junit-jupiter'
         testImplementation 'org.junit.jupiter:junit-jupiter-params'
+
+        testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     }
 
     tasks.withType(Test).configureEach {
@@ -69,8 +77,5 @@ allprojects {
 subprojects {
     apply {
         plugin("org.jmailen.kotlinter")
-    }
-    kotlinter {
-        disabledRules = ["no-wildcard-imports"]
     }
 }
