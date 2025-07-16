@@ -38,7 +38,7 @@ class ConstantsGenerator(
     private val document: Document,
 ) {
     private val javaReservedKeywordSanitizer = JavaReservedKeywordSanitizer()
-	private val nonNullString = NullabilityAnnotator.of(config).annotateNonNull(ClassName.get(String::class.java))
+    private val nonNullString = NullabilityAnnotator.of(config).annotateNonNull(ClassName.get(String::class.java))
 
     fun generate(): CodeGenResult {
         val javaType =
@@ -221,15 +221,15 @@ class ConstantsGenerator(
         fieldName: String,
     ) {
         val sanitizedFieldName = javaReservedKeywordSanitizer.sanitize(fieldName.capitalized())
-		if (!constantsType.fieldSpecs.any { it.name == sanitizedFieldName }) {
-			constantsType.addField(
-				FieldSpec
-					.builder(nonNullString, sanitizedFieldName)
-					.addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
-					.initializer("\$S", fieldName)
-					.build(),
-			)
-		}
+        if (!constantsType.fieldSpecs.any { it.name == sanitizedFieldName }) {
+            constantsType.addField(
+                FieldSpec
+                    .builder(nonNullString, sanitizedFieldName)
+                    .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
+                    .initializer("\$S", fieldName)
+                    .build(),
+            )
+        }
     }
 
     private fun addQueryInputArgument(

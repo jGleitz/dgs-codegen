@@ -110,10 +110,20 @@ class ClientApiGenerator(
         methodNames: MutableSet<String>,
     ): JavaFile {
         val setType = ClassName.get(Set::class.java)
-        val stringType = nullability.annotateNonNull(ClassName.get(String::class.java))
-        val setOfStringType = nullability.annotateNonNull(ParameterizedTypeName.get(setType, stringType))
-        val listOfVariablesType = nullability.annotateNonNull(ParameterizedTypeName.get(ClassName.get(List::class.java), nullability.annotateNonNull(ClassName.get(VariableDefinition::class.java))))
-        val mapOfStringsType = nullability.annotateNonNull(ParameterizedTypeName.get(ClassName.get(Map::class.java), stringType, stringType))
+        val nonNullStringType = nullability.annotateNonNull(ClassName.get(String::class.java))
+        val nullableStringType = nullability.annotateNullable(ClassName.get(String::class.java))
+        val setOfStringType = nullability.annotateNonNull(ParameterizedTypeName.get(setType, nonNullStringType))
+        val listOfVariablesType =
+            nullability.annotateNonNull(
+                ParameterizedTypeName.get(
+                    ClassName.get(List::class.java),
+                    nullability.annotateNonNull(ClassName.get(VariableDefinition::class.java)),
+                ),
+            )
+        val mapOfStringsType =
+            nullability.annotateNonNull(
+                ParameterizedTypeName.get(ClassName.get(Map::class.java), nonNullStringType, nonNullStringType),
+            )
 
         val methodName = generateMethodName(it.name.capitalized(), operation.lowercase(), methodNames)
         val javaType =
@@ -140,7 +150,7 @@ class ClientApiGenerator(
             MethodSpec
                 .methodBuilder("getOperationName")
                 .addModifiers(Modifier.PUBLIC)
-                .returns(nullability.annotateNonNull(ClassName.get(String::class.java)))
+                .returns(nonNullStringType)
                 .addAnnotation(Override::class.java)
                 .addStatement("return \$S", it.name)
                 .build(),
@@ -246,7 +256,7 @@ class ClientApiGenerator(
             val referenceMethodBuilder =
                 MethodSpec
                     .methodBuilder(javaReservedKeywordSanitizer.sanitize(inputValue.name) + "Reference")
-                    .addParameter(stringType, "variableRef")
+                    .addParameter(nonNullStringType, "variableRef")
                     .returns(ClassName.get("", "Builder"))
                     .addModifiers(Modifier.PUBLIC)
                     .addCode(
@@ -262,11 +272,14 @@ class ClientApiGenerator(
             builderClass.addMethod(referenceMethodBuilder.build())
 
             constructorBuilder.addParameter(
-                    nullability.annotateNullable(findReturnType),
-                    javaReservedKeywordSanitizer.sanitize(inputValue.name)
-                )
+                nullability.annotateNullable(findReturnType),
+                javaReservedKeywordSanitizer.sanitize(inputValue.name),
+            )
 
-            legacyConstructorBuilder.addParameter(findReturnType, javaReservedKeywordSanitizer.sanitize(inputValue.name))
+            legacyConstructorBuilder.addParameter(
+                nullability.annotateNullable(findReturnType),
+                javaReservedKeywordSanitizer.sanitize(inputValue.name),
+            )
 
             if (findReturnType.isPrimitive) {
                 val code =
@@ -280,7 +293,7 @@ class ClientApiGenerator(
                     """
                     |if (${javaReservedKeywordSanitizer.sanitize(inputValue.name)} != null || fieldsSet.contains("${inputValue.name}")) {
                     |    getInput().put("${inputValue.name}", ${javaReservedKeywordSanitizer.sanitize(inputValue.name)});
-                    |}
+                |}
                     """.trimMargin()
                 constructorBuilder.addCode(code)
                 legacyConstructorBuilder.addCode(code)
@@ -305,7 +318,7 @@ class ClientApiGenerator(
         val nameMethodBuilder =
             MethodSpec
                 .methodBuilder("queryName")
-                .addParameter(nullability.annotateNullable(ClassName.get(String::class.java)), "queryName")
+                .addParameter(nullableStringType, "queryName")
                 .returns(nullability.annotateNonNull(ClassName.get("", "Builder")))
                 .addModifiers(Modifier.PUBLIC)
                 .addCode(
@@ -316,17 +329,11 @@ class ClientApiGenerator(
                 )
 
         builderClass
-            .addField(
-            FieldSpec.builder(
-                nullability.annotateNullable(ClassName.get(String::class.java)),
-                "queryName",
-                Modifier.PRIVATE
-            )
-                .build()
-        )
+            .addField(FieldSpec.builder(nullableStringType, "queryName", Modifier.PRIVATE).build())
             .addMethod(nameMethodBuilder.build())
 
-        constructorBuilder.addParameter(stringType, "queryName")
+        constructorBuilder.addParameter(nullableStringType, "queryName")
+        legacyConstructorBuilder.addParameter(nullableStringType, "queryName")
 
         if (it.inputValueDefinitions.isNotEmpty()) {
             constructorBuilder.addParameter(setOfStringType, "fieldsSet")
@@ -379,7 +386,7 @@ class ClientApiGenerator(
         deprecationReason: String?,
     ) {
         if (deprecatedDirective != null) {
-            methodBuilder.addAnnotation(java.lang.Deprecated::class.java)
+            methodBuilder.addAnnotation(Deprecated::class.java)
         }
 
         // Build Javadoc, separate multiple blocks by empty line
@@ -429,22 +436,20 @@ class ClientApiGenerator(
             TypeVariableName
                 .get(
                     "PARENT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val rootJavaType =
             TypeVariableName
                 .get(
                     "ROOT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val javaType =
             TypeSpec
                 .classBuilder(clazzName)
@@ -499,15 +504,16 @@ class ClientApiGenerator(
                 }.map { (fieldDef, typeDef) ->
                     val projectionName = "${typeDef.name.capitalized()}Projection"
                     if (typeDef !is ScalarTypeDefinition) {
-						val returnType = typeUtils.nonNullParameterized(
-							projectionName,
-							typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
-							typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
-						)
-						val noArgMethodBuilder =
-							MethodSpec
-								.methodBuilder(javaReservedKeywordSanitizer.sanitize(fieldDef.name))
-								.returns(nullability.annotateNonNull(returnType))
+                        val returnType =
+                            typeUtils.nonNullParameterized(
+                                projectionName,
+                                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                            )
+                        val noArgMethodBuilder =
+                            MethodSpec
+                                .methodBuilder(javaReservedKeywordSanitizer.sanitize(fieldDef.name))
+                                .returns(nullability.annotateNonNull(returnType))
                                 .addCode(
                                     """
                             |$projectionName<$clazzName<PARENT, ROOT>, $clazzName<PARENT, ROOT>> projection = new $projectionName<>(this, this);    
@@ -566,13 +572,18 @@ class ClientApiGenerator(
         projectionRoot: String,
     ): TypeSpec.Builder? {
         val clazzName = javaType.build().name
-        val rootTypeName = if (projectionRoot == "this") typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
-        else TypeVariableName.get("ROOT")
-        val returnType = typeUtils.nonNullParameterized(
-            projectionName,
-            typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
-            rootTypeName
-        )
+        val rootTypeName =
+            if (projectionRoot == "this") {
+                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
+            } else {
+                TypeVariableName.get("ROOT")
+            }
+        val returnType =
+            typeUtils.nonNullParameterized(
+                projectionName,
+                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                rootTypeName,
+            )
         val methodBuilder =
             MethodSpec
                 .methodBuilder(javaReservedKeywordSanitizer.sanitize(fieldDefinition.name))
@@ -649,22 +660,20 @@ class ClientApiGenerator(
             TypeVariableName
                 .get(
                     "PARENT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val rootType =
             TypeVariableName
                 .get(
                     "ROOT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val javaType =
             TypeSpec
                 .classBuilder(clazzName)
@@ -687,16 +696,17 @@ class ClientApiGenerator(
             federatedTypes
                 .map { objTypeDef ->
                     val projectionName = "Entities${objTypeDef.name.capitalized()}KeyProjection"
-            val returnType = typeUtils.nonNullParameterized(
-                projectionName,
-                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
-                typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
-            )
+                    val returnType =
+                        typeUtils.nonNullParameterized(
+                            projectionName,
+                            typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                            typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                        )
                     javaType.addMethod(
                         MethodSpec
                             .methodBuilder("on${objTypeDef.name}")
                             .addModifiers(Modifier.PUBLIC)
-                    .returns(nullability.annotateNonNull(returnType))
+                            .returns(nullability.annotateNonNull(returnType))
                             .addCode(
                                 """
                         | Entities${objTypeDef.name.capitalized()}KeyProjection<$clazzName<PARENT, ROOT>, $clazzName<PARENT, ROOT>> fragment = new Entities${objTypeDef.name.capitalized()}KeyProjection(this, this);
@@ -765,16 +775,20 @@ class ClientApiGenerator(
     ): CodeGenResult {
         val rootRef = if (javaType.build().name == rootType.name) "this" else "getRoot()"
         val rootTypeName =
-            if (javaType.build().name == rootType.name) typeUtils.nonNullParameterized(rootType.name, "PARENT", "ROOT")
-            else TypeVariableName.get("ROOT")
+            if (javaType.build().name == rootType.name) {
+                typeUtils.nonNullParameterized(rootType.name, "PARENT", "ROOT")
+            } else {
+                TypeVariableName.get("ROOT")
+            }
         val parentRef = javaType.build().name
         val projectionName = "${it.name.capitalized()}Fragment"
         val fullProjectionName = "${projectionName}Projection"
-        val returnType = typeUtils.nonNullParameterized(
-            fullProjectionName,
-            typeUtils.nonNullParameterized(parentRef, "PARENT", "ROOT"),
-            rootTypeName
-        )
+        val returnType =
+            typeUtils.nonNullParameterized(
+                fullProjectionName,
+                typeUtils.nonNullParameterized(parentRef, "PARENT", "ROOT"),
+                rootTypeName,
+            )
 
         javaType.addMethod(
             MethodSpec
@@ -876,22 +890,20 @@ class ClientApiGenerator(
             TypeVariableName
                 .get(
                     "PARENT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val rootJavaType =
             TypeVariableName
                 .get(
                     "ROOT",
+                ).withBounds(
+                    nullability.annotateNonNull(
+                        ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?")),
+                    ),
                 )
-            .withBounds(
-                nullability.annotateNonNull(
-                    ParameterizedTypeName.get(className, TypeVariableName.get("?"), TypeVariableName.get("?"))
-                )
-            )
         val javaType =
             TypeSpec
                 .classBuilder(clazzName)
@@ -940,15 +952,17 @@ class ClientApiGenerator(
                     if (typeDefinition != null) it to typeDefinition else null
                 }.map { (fieldDef, typeDef) ->
                     val projectionName = "${typeDef.name.capitalized()}Projection"
-					val methodName = javaReservedKeywordSanitizer.sanitize(fieldDef.name)
-					val returnType = typeUtils.nonNullParameterized(
-						projectionName,
-						typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
-						TypeVariableName.get("ROOT")
-					)                    javaType.addMethod(
+                    val methodName = javaReservedKeywordSanitizer.sanitize(fieldDef.name)
+                    val returnType =
+                        typeUtils.nonNullParameterized(
+                            projectionName,
+                            typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT"),
+                            TypeVariableName.get("ROOT"),
+                        )
+                    javaType.addMethod(
                         MethodSpec
-							.methodBuilder(methodName)
-							.returns(nullability.annotateNonNull(returnType))
+                            .methodBuilder(methodName)
+                            .returns(nullability.annotateNonNull(returnType))
                             .addCode(
                                 """
                                     | $projectionName<$clazzName<PARENT, ROOT>, ROOT> projection = new $projectionName<>(this, getRoot());
@@ -980,10 +994,10 @@ class ClientApiGenerator(
             .forEach {
                 val objectTypeDefinition = it.type.findTypeDefinition(document)
                 if (objectTypeDefinition == null) {
-					val returnType = typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
+                    val returnType = typeUtils.nonNullParameterized(clazzName, "PARENT", "ROOT")
                     javaType.addMethod(
-						MethodSpec
-							.methodBuilder(javaReservedKeywordSanitizer.sanitize(it.name))
+                        MethodSpec
+                            .methodBuilder(javaReservedKeywordSanitizer.sanitize(it.name))
                             .returns(nullability.annotateNonNull(returnType))
                             .addCode(
                                 """

@@ -165,9 +165,9 @@ open class GenerateJavaTask
         @Input
         var includeClassImports = mutableMapOf<String, MutableMap<String, String>>()
 
-    @Input
-    @Optional
-    var javaNullabilityAnnotations: String? = null
+        @Input
+        @Optional
+        var javaNullabilityAnnotations: String? = null
 
         @Classpath
         val dgsCodegenClasspath: ConfigurableFileCollection =
@@ -227,10 +227,10 @@ open class GenerateJavaTask
                     includeImports = includeImports,
                     includeEnumImports = includeEnumImports,
                     includeClassImports = includeClassImports,
-            		generateCustomAnnotations = generateCustomAnnotations,
-					javaGenerateAllConstructor = javaGenerateAllConstructor,
-					trackInputFieldSet = trackInputFieldSet,
-					javaNullabilityAnnotations = javaNullabilityAnnotations,
+                    generateCustomAnnotations = generateCustomAnnotations,
+                    javaGenerateAllConstructor = javaGenerateAllConstructor,
+                    trackInputFieldSet = trackInputFieldSet,
+                    javaNullabilityAnnotations = javaNullabilityAnnotations,
                 )
 
             logger.info("Codegen config: {}", config)

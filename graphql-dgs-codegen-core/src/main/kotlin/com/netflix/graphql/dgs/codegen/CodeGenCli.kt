@@ -70,7 +70,10 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
     private val shortProjectionNames by option("--short-projection-names").flag()
     private val generateInterfaceSetters by option("--generate-interface-setters").flag()
     private val generateDocs by option("--generate-docs").flag()
-    private val javaNullabilityAnnotations by option("--java-nullability-annotations", help = "Library to generate nullability annotations in Java code for").choice("jspecify")
+    private val javaNullabilityAnnotations by option(
+        "--java-nullability-annotations",
+        help = "Library to generate nullability annotations in Java code for",
+    ).choice("jspecify")
 
     override fun run() {
         val inputSchemas =
@@ -108,8 +111,8 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
                         generateDataTypes = generateDataTypes,
                         generateInterfaces = generateInterfaces,
                         generateInterfaceSetters = generateInterfaceSetters,
-                    	generateDocs = generateDocs,
-                    	javaNullabilityAnnotations = javaNullabilityAnnotations,
+                        generateDocs = generateDocs,
+                        javaNullabilityAnnotations = javaNullabilityAnnotations,
                     )
                 } else {
                     CodeGenConfig(
@@ -130,8 +133,8 @@ class CodeGenCli : CliktCommand("Generate Java sources for SCHEMA file(s)") {
                         generateDataTypes = generateDataTypes,
                         generateInterfaces = generateInterfaces,
                         generateInterfaceSetters = generateInterfaceSetters,
-                    	generateDocs = generateDocs,
-                    	javaNullabilityAnnotations = javaNullabilityAnnotations,
+                        generateDocs = generateDocs,
+                        javaNullabilityAnnotations = javaNullabilityAnnotations,
                     )
                 },
             ).generate()

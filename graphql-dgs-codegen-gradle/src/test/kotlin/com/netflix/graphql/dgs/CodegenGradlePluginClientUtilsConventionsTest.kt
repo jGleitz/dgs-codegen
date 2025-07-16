@@ -211,7 +211,9 @@ dependencies {
         assertThat(result.output)
             .contains("DGS CodeGen added dependency [de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core")
         assertThat(result.output)
-            .contains("- de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()} -> $higherVersion FAILED")
+            .contains(
+                "- de.joshuagleitze.graphql.dgs.codegen:graphql-dgs-codegen-shared-core:${inferredVersion.get()} -> $higherVersion FAILED",
+            )
     }
 
     private fun prepareBuildGradleFile(content: String) {

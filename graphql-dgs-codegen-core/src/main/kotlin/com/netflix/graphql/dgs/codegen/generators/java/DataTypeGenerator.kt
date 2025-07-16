@@ -18,8 +18,6 @@
 
 package com.netflix.graphql.dgs.codegen.generators.java
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.netflix.graphql.dgs.codegen.*
 import com.netflix.graphql.dgs.codegen.generators.shared.SiteTarget
 import com.netflix.graphql.dgs.codegen.generators.shared.applyDirectivesJava
@@ -96,11 +94,11 @@ class DataTypeGenerator(
                 .toList()
 
         var implements =
-			(definition.implements + extensions.flatMap { it.implements })
-            	.asSequence()
-            	.filterIsInstance<TypeName>()
-            	.map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
-            	.toList()
+            (definition.implements + extensions.flatMap { it.implements })
+                .asSequence()
+                .filterIsInstance<TypeName>()
+                .map { nullability.removeNullabilityAnnotation(typeUtils.findReturnType(it)).toString() }
+                .toList()
 
         var useInterfaceType = false
         var overrideGetter = false
@@ -349,8 +347,8 @@ abstract class BaseDataTypeGenerator(
     internal val document: Document,
 ) {
     internal val typeUtils = TypeUtils(packageName, config, document)
-	private val javaReservedKeywordSanitizer = JavaReservedKeywordSanitizer()
-	protected val nullability = NullabilityAnnotator.of(config)
+    private val javaReservedKeywordSanitizer = JavaReservedKeywordSanitizer()
+    protected val nullability = NullabilityAnnotator.of(config)
 
     internal fun generate(
         name: String,
@@ -753,11 +751,12 @@ abstract class BaseDataTypeGenerator(
                 isOptional = true
             }
             builderType.addField(
-                FieldSpec.builder(nullability.annotateNullable(it.type), it.name, *it.modifiers.toTypedArray())
+                FieldSpec
+                    .builder(nullability.annotateNullable(it.type), it.name, *it.modifiers.toTypedArray())
                     .addAnnotations(it.annotations)
                     .initializer(it.initializer)
                     .addJavadoc(it.javadoc)
-                    .build()
+                    .build(),
             )
             val methodBuilder =
                 MethodSpec

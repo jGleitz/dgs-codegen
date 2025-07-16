@@ -189,7 +189,7 @@ class ClientApiGenMutationTest {
             |}
             """.trimMargin()
 
-        assert(initMethod.contains(expected))
+        assertThat(initMethod).contains(expected)
         assertCompilesJava(
             codeGenResult.clientProjections + codeGenResult.javaQueryTypes + codeGenResult.javaDataTypes,
         )

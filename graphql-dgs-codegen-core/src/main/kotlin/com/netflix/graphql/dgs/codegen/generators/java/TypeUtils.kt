@@ -39,8 +39,8 @@ class TypeUtils(
     private val config: CodeGenConfig,
     private val document: Document,
 ) {
-	private val nullability = NullabilityAnnotator.of(config)
-	
+    private val nullability = NullabilityAnnotator.of(config)
+
     companion object {
         private val commonScalars =
             mapOf<String, JavaTypeName>(
@@ -64,13 +64,18 @@ class TypeUtils(
 
     fun qualifyName(name: String): String = "$packageName.$name"
 
-    fun nonNullParameterized(type: String, vararg typeArguments: String): ParameterizedTypeName =
-        nonNullParameterized(type, *typeArguments.map { TypeVariableName.get(it) }.toTypedArray())
+    fun nonNullParameterized(
+        type: String,
+        vararg typeArguments: String,
+    ): ParameterizedTypeName = nonNullParameterized(type, *typeArguments.map { TypeVariableName.get(it) }.toTypedArray())
 
-    fun nonNullParameterized(type: String, vararg typeArguments: JavaTypeName): ParameterizedTypeName =
+    fun nonNullParameterized(
+        type: String,
+        vararg typeArguments: JavaTypeName,
+    ): ParameterizedTypeName =
         ParameterizedTypeName.get(
             ClassName.get("", type),
-            *typeArguments.map { nullability.annotateNonNull(it) }.toTypedArray()
+            *typeArguments.map { nullability.annotateNonNull(it) }.toTypedArray(),
         )
 
     fun findReturnType(
@@ -86,8 +91,8 @@ class TypeUtils(
                 ): TraversalControl {
                     val typeName = node.toJavaTypeName(useInterfaceType)
                     val boxed = boxType(typeName)
-                val annotated = nullability.annotateNullable(boxed)
-                context.setAccumulate(annotated)
+                    val annotated = nullability.annotateNullable(boxed)
+                    context.setAccumulate(annotated)
                     return TraversalControl.CONTINUE
                 }
 
@@ -124,8 +129,8 @@ class TypeUtils(
                         } else {
                             ParameterizedTypeName.get(ClassName.get(List::class.java), boxed)
                         }
-                val annotated = nullability.annotateNullable(parameterizedTypeName)
-                context.setAccumulate(annotated)
+                    val annotated = nullability.annotateNullable(parameterizedTypeName)
+                    context.setAccumulate(annotated)
                     return TraversalControl.CONTINUE
                 }
 
@@ -140,8 +145,8 @@ class TypeUtils(
                         } else {
                             unboxType(typeName)
                         }
-                val annotated = nullability.annotateNonNull(boxed)
-                context.setAccumulate(annotated)
+                    val annotated = nullability.annotateNonNull(boxed)
+                    context.setAccumulate(annotated)
                     return TraversalControl.CONTINUE
                 }
 

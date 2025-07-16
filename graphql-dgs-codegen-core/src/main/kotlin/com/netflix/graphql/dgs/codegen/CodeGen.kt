@@ -559,8 +559,8 @@ class CodeGenConfig(
     var addGeneratedAnnotation: Boolean = false,
     var disableDatesInGeneratedAnnotation: Boolean = false,
     var addDeprecatedAnnotation: Boolean = false,
-	var trackInputFieldSet: Boolean = false,
-	var javaNullabilityAnnotations: String? = null,
+    var trackInputFieldSet: Boolean = false,
+    var javaNullabilityAnnotations: String? = null,
 ) {
     val packageNameClient: String = "$packageName.$subPackageNameClient"
 
@@ -588,7 +588,7 @@ class CodeGenConfig(
         ${typeMapping.map { "--type-mapping ${it.key}=${it.value}" }.joinToString("\n")}           
         ${if (shortProjectionNames) "--short-projection-names" else ""}
         ${if (addGeneratedAnnotation) "--add-generated-annotation" else ""}
-			${if (javaNullabilityAnnotations != null) "--java-nullability-annotations ${javaNullabilityAnnotations}" else ""}
+        ${if (javaNullabilityAnnotations != null) "--java-nullability-annotations $javaNullabilityAnnotations" else ""}
         ${schemas.joinToString(" ")}
         """.trimIndent()
 }
