@@ -22,14 +22,12 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.tasks.SourceSet
 import org.gradle.util.GradleVersion
-import java.util.Optional
+import java.util.*
 
 class CodegenPlugin : Plugin<Project> {
-
     companion object {
         const val GRADLE_GROUP = "DGS GraphQL Codegen"
         private val logger = Logging.getLogger(CodegenPlugin::class.java)
@@ -43,10 +41,16 @@ class CodegenPlugin : Plugin<Project> {
         val generateJavaTaskProvider = project.tasks.register("generateJava", GenerateJavaTask::class.java)
         generateJavaTaskProvider.configure { it.group = GRADLE_GROUP }
 
-        val javaConvention = project.convention.getPlugin(JavaPluginConvention::class.java)
         val javaExtension = project.extensions.getByType(JavaPluginExtension::class.java)
 
-        val sourceSets = if (GradleVersion.current() >= GradleVersion.version("7.1")) javaExtension.sourceSets else javaConvention.sourceSets
+        val sourceSets =
+            if (GradleVersion.current() >=
+                GradleVersion.version("7.1")
+            ) {
+                javaExtension.sourceSets
+            } else {
+                throw RuntimeException("Gradle versions < 7.1 are no longer supported by DGS Codegen. Please upgrade your Gradle version.")
+            }
         val mainSourceSet = sourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
         val outputDir = generateJavaTaskProvider.map(GenerateJavaTask::getOutputDir)
         mainSourceSet.java.srcDirs(project.files(outputDir).builtBy(generateJavaTaskProvider))
@@ -62,20 +66,23 @@ class CodegenPlugin : Plugin<Project> {
                 ClientUtilsConventions.apply(
                     p,
                     Optional.ofNullable(codegenExtension.clientCoreVersion.orNull),
-                    Optional.ofNullable(codegenExtension.clientCoreScope.orNull)
+                    Optional.ofNullable(codegenExtension.clientCoreScope.orNull),
                 )
             }
         }
     }
 
-    private fun addDependencyLock(project: Project, codegenExtension: CodegenPluginExtension) {
+    private fun addDependencyLock(
+        project: Project,
+        codegenExtension: CodegenPluginExtension,
+    ) {
         val dependencyLockString = ClientUtilsConventions.getDependencyString()
         try {
             if (codegenExtension.clientCoreConventionsEnabled.getOrElse(true)) {
                 project.dependencyLocking.ignoredDependencies.add(dependencyLockString)
                 logger.info(
                     "DGS CodeGen added ignored dependency [{}].",
-                    dependencyLockString
+                    dependencyLockString,
                 )
             }
         } catch (e: Exception) {
@@ -83,7 +90,7 @@ class CodegenPlugin : Plugin<Project> {
             logger.info(
                 "Failed to add DGS CodeGen to ignoredDependencies because: {}",
                 dependencyLockString,
-                e
+                e,
             )
         }
     }

@@ -17,61 +17,35 @@
  */
 
 plugins {
-    id 'com.gradle.plugin-publish' version '0.21.0'
+    id 'com.gradle.plugin-publish' version '1.3.1'
 }
 
 apply plugin: 'java-gradle-plugin'
 
 dependencies {
-    api project(":graphql-dgs-codegen-core")
-    compileOnly "com.netflix.nebula:gradle-dependency-lock-plugin:latest.release"
-    compileOnly "org.jetbrains.kotlin:kotlin-gradle-plugin"
+    api project(':graphql-dgs-codegen-core')
+    compileOnly 'com.netflix.nebula:gradle-dependency-lock-plugin:15.2.0'
+    compileOnly 'org.jetbrains.kotlin:kotlin-gradle-plugin'
 
     testApi gradleTestKit()
-    testImplementation("com.google.guava:guava:32.1.+")
+    testImplementation('com.google.guava:guava:33.4.+')
 }
 
 description = 'Netflix GraphQL DGS Code Generation Plugin'
 
-pluginBundle {
-    vcsUrl = 'https://github.com/jGleitz/dgs-codegen.git'
-    description = 'Fork of graphql-dgs-codegen-gradle, with support for jspecify. Only maintained until the feature is merged upstream.'
-    website = 'https://github.com/jGleitz/dgs-codegen'
-    plugins {
-        codegen {
-            id = 'de.joshuagleitze.dgs.codegen'
-            displayName = 'DGS Code Generation Plugin'
-            description = 'Fork of graphql-dgs-codegen-gradle, with support for jspecify. Only maintained until the feature is merged upstream.'
-            tags = ['Codegen']
-        }
-    }
-}
 
 group = 'de.joshuagleitze.graphql.dgs.codegen'
 gradlePlugin {
-    // Define the plugin
+    website.set("https://github.com/jGleitz/dgs-codegen")
+    vcsUrl.set("https://github.com/jGleitz/dgs-codegen.git")
     plugins {
-        codegen {
+        create("codegen") {
             id = 'de.joshuagleitze.dgs.codegen'
             implementationClass = 'com.netflix.graphql.dgs.codegen.gradle.CodegenPlugin'
             displayName = 'Fork of the DGS Code Generation Plugin with jspecify support'
+            description = 'Fork of graphql-dgs-codegen-gradle, with support for jspecify. Only maintained until the feature is merged upstream.'
+            tags = ['Codegen']
         }
-    }
-}
-
-
-task createClasspathManifest {
-    File outputDir = file("$buildDir/$name")
-
-    inputs.files sourceSets.main.runtimeClasspath
-    inputs.files project(":graphql-dgs-codegen-core").sourceSets.main.runtimeClasspath
-    outputs.dir outputDir
-
-    doLast {
-        outputDir.mkdirs()
-        file("$outputDir/plugin-classpath.txt").text =
-                sourceSets.main.runtimeClasspath.join('\n') +
-                        project(":graphql-dgs-codegen-core").sourceSets.main.runtimeClasspath.join('\n')
     }
 }
 
@@ -82,21 +56,7 @@ gradle.taskGraph.whenReady { graph ->
     }
 }
 
-// Add the classpath file to the test runtime classpath
-dependencies {
-    testRuntimeOnly files(createClasspathManifest)
-}
-
 project.afterEvaluate {
-    tasks.named("generateMetadataFileForNebulaPublication") {
-        it.dependsOn("publishPluginJar")
-        it.dependsOn("publishPluginJavaDocsJar")
-    }
-    tasks.named("generateMetadataFileForPluginMavenPublication") {
-        it.dependsOn("publishPluginJar")
-        it.dependsOn("publishPluginJavaDocsJar")
-    }
-
     //Disable marker tasks
     project.tasks.findAll {
         (it.name.contains("Marker") && it.name.contains('Maven')) ||
@@ -114,11 +74,15 @@ TaskProvider validatePluginsTask = project.tasks.named('validatePlugins')
 TaskProvider publishPluginsTask = project.tasks.named('publishPlugins')
 project.plugins.withId('nebula.release') {
     project.tasks.withType(PublishToMavenRepository).configureEach {
-        def releasetask = project.rootProject.tasks.findByName('release')
+        def releasetask = project.rootProject.tasks.named('release')
         if (releasetask) {
               it.mustRunAfter(releasetask)
               it.dependsOn(validatePluginsTask)
               it.dependsOn(publishPluginsTask)
         }
     }
+}
+
+signing {
+    setRequired(false)
 }
