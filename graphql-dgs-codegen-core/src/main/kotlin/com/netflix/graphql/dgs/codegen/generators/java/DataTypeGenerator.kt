@@ -23,7 +23,14 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder
 import com.netflix.graphql.dgs.codegen.*
 import com.netflix.graphql.dgs.codegen.generators.shared.SiteTarget
 import com.netflix.graphql.dgs.codegen.generators.shared.applyDirectivesJava
-import com.squareup.javapoet.*
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeSpec
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
 import graphql.language.Description
@@ -313,27 +320,10 @@ abstract class BaseDataTypeGenerator(
             addField(it, javaType)
         }
 
-        if (!config.javaNullSafeBuilders) {
-            addDefaultConstructor(javaType)
-        }
+        addDefaultConstructor(javaType)
 
         if (config.javaGenerateAllConstructor && fields.isNotEmpty()) {
             addParameterizedConstructor(fields, javaType)
-        }
-
-        if (config.javaNullSafeBuilders) {
-            val nonNullFields = fields.filter { !nullability.isNullable(it.type) }
-            if (nonNullFields.isNotEmpty()) {
-                javaType.addAnnotation(
-                    AnnotationSpec
-                        .builder(JsonDeserialize::class.java)
-                        .addMember("builder", "\$T.class", getBuilderName(ClassName.get("", name)))
-                        .build()
-                )
-            }
-            if (!config.javaGenerateAllConstructor || nonNullFields != fields) {
-                addParameterizedConstructor(nonNullFields, javaType)
-            }
         }
 
         addToString(fields, javaType)
@@ -542,8 +532,6 @@ abstract class BaseDataTypeGenerator(
         )
     }
 
-    private fun getBuilderName(className: ClassName) = className.nestedClass("Builder")
-
     private fun addBuilder(javaType: TypeSpec.Builder) {
         val builtType = javaType.build()
         val name = builtType.name
@@ -552,36 +540,13 @@ abstract class BaseDataTypeGenerator(
         val buildMethod = MethodSpec.methodBuilder("build")
             .addModifiers(Modifier.PUBLIC)
             .returns(className)
-        val buildCode = CodeBlock.builder()
-        if (config.javaNullSafeBuilders) {
-            buildCode.add("return new \$T(\n", className)
-            buildCode.indent()
-            builtType.fieldSpecs.forEachIndexed { index, fieldSpec ->
-                val sep = if (index < builtType.fieldSpecs.size - 1) "," else ""
-                if (!nullability.isNullable(fieldSpec.type)) {
-                    buildCode.add(
-                        "\$T.\$N(this.\$N, \$S)$sep\n",
-                        ClassName.get(Objects::class.java),
-                        "requireNonNull",
-                        fieldSpec.name,
-                        "No ${fieldSpec.name} was set although it is required!"
-                    )
-                } else {
-                    buildCode.add("this.\$N$sep\n", fieldSpec.name)
-                }
-            }
-            buildCode.unindent()
-            buildCode.addStatement(")")
-        } else {
-            buildCode.addStatement("\$T result = new \$T()", className, className)
-            for (fieldSpec in builtType.fieldSpecs) {
-                buildCode.addStatement("result.\$N = this.\$N", fieldSpec.name, fieldSpec.name)
-            }
-            buildCode.addStatement("return result")
+            .addStatement("\$T result = new \$T()", className, className)
+        for (fieldSpec in builtType.fieldSpecs) {
+            buildMethod.addStatement("result.\$N = this.\$N", fieldSpec.name, fieldSpec.name)
         }
-        buildMethod.addCode(buildCode.build())
+        buildMethod.addStatement("return result")
 
-        val builderClassName = getBuilderName(className)
+        val builderClassName = className.nestedClass("Builder")
         val newBuilderMethod =
             MethodSpec
                 .methodBuilder("newBuilder")
@@ -617,12 +582,6 @@ abstract class BaseDataTypeGenerator(
                     .addModifiers(Modifier.PUBLIC).build()
             )
         }
-
-        builderType.addAnnotation(
-            AnnotationSpec.builder(JsonPOJOBuilder::class.java)
-                .addMember("withPrefix", "\$S", "")
-                .build()
-        )
 
         javaType.addType(builderType.build())
     }

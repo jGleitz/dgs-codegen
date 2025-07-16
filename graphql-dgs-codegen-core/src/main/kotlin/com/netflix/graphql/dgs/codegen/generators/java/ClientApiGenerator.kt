@@ -98,39 +98,24 @@ class ClientApiGenerator(private val config: CodeGenConfig, private val document
 
         val builderClass = TypeSpec.classBuilder("Builder").addModifiers(Modifier.STATIC, Modifier.PUBLIC)
             .addOptionalGeneratedAnnotation(config)
-
-        val buildMethod = MethodSpec.methodBuilder("build")
-            .addModifiers(Modifier.PUBLIC)
-            .returns(nullability.annotateNonNull(ClassName.get("", methodName)))
-        val buildCode = CodeBlock.builder().add("return new $methodName(\n")
-        buildCode.indent()
-        it.inputValueDefinitions.forEachIndexed { index, inputValue ->
-            if (config.javaNullSafeBuilders && !nullability.isNullable(typeUtils.findReturnType(inputValue.type))) {
-                buildCode.add(
-                    "\$T.\$N(this.\$N, \$S),\n",
-                    ClassName.get(Objects::class.java),
-                    "requireNonNull",
-                    ReservedKeywordSanitizer.sanitize(inputValue.name),
-                    "No ${inputValue.name} was set although it is required!"
-                )
-            } else {
-                buildCode.add("this.\$N,\n", ReservedKeywordSanitizer.sanitize(inputValue.name))
-            }
-        }
-        if (it.inputValueDefinitions.isNotEmpty()) {
-            buildCode.add("this.queryName,\nthis.fieldsSet\n")
-        } else {
-            buildCode.add("this.queryName\n")
-        }
-        buildCode.unindent()
-        buildCode.addStatement(")")
-        buildMethod.addCode(buildCode.build())
-
-        builderClass.addMethod(buildMethod.build())
-
-        val fieldsSetField = FieldSpec.builder(setOfStringType, "fieldsSet", Modifier.PRIVATE, Modifier.FINAL)
-            .initializer("new \$T<>()", ClassName.get(HashSet::class.java))
-        builderClass.addField(fieldsSetField.build())
+            .addMethod(
+                MethodSpec.methodBuilder("build")
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(ClassName.get("", methodName))
+                    .addCode(
+                        if (it.inputValueDefinitions.isNotEmpty()) {
+                            """
+                            |return new $methodName(${it.inputValueDefinitions.joinToString(", ") { ReservedKeywordSanitizer.sanitize(it.name) }}, queryName, fieldsSet);
+                            |         
+                            """.trimMargin()
+                        } else {
+                            """
+                            |return new $methodName(queryName);                                     
+                            """.trimMargin()
+                        }
+                    )
+                    .build()
+            ).addField(FieldSpec.builder(setOfStringType, "fieldsSet", Modifier.PRIVATE).initializer("new \$T<>()", ClassName.get(HashSet::class.java)).build())
 
         val constructorBuilder = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC)
